@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0f1115">
+<title>Caça-Ofertas</title>
+<style>
+  :root {
+    --bg: #0f1115; --card: #181b22; --line: #262a33; --text: #eef0f4; --muted: #9097a6;
+    --green: #25d366; --green-d: #1aa851; --red: #ff5d5d; --amber: #ffb020; --amz: #ff9900; --ml: #ffe600;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font: 15px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  header { position: sticky; top: 0; z-index: 5; background: rgba(15,17,21,.92); backdrop-filter: blur(8px);
+           border-bottom: 1px solid var(--line); padding: 12px 16px 0; }
+  h1 { font-size: 18px; margin: 0 0 10px; display: flex; align-items: center; gap: 8px; }
+  h1 .count { font-size: 12px; background: var(--green); color: #000; border-radius: 99px; padding: 1px 8px; }
+  nav { display: flex; gap: 4px; }
+  nav button { flex: 1; background: none; border: 0; color: var(--muted); padding: 10px 4px; font: inherit;
+               font-weight: 600; border-bottom: 2px solid transparent; cursor: pointer; }
+  nav button.on { color: var(--text); border-color: var(--green); }
+  main { max-width: 640px; margin: 0 auto; padding: 14px 12px 80px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px; margin-bottom: 14px; }
+  .top { display: flex; gap: 12px; }
+  .top img { width: 92px; height: 92px; object-fit: contain; background: #fff; border-radius: 10px; flex: none; }
+  .title { font-weight: 600; font-size: 14px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .price { margin-top: 6px; font-size: 20px; font-weight: 700; }
+  .price s { color: var(--muted); font-size: 13px; font-weight: 400; margin-right: 6px; }
+  .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .tag { font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 6px; background: #2a2f3a; }
+  .tag.amazon { background: var(--amz); color: #000; } .tag.ml { background: var(--ml); color: #000; }
+  .tag.off { background: var(--green); color: #000; } .tag.low { background: #3b82f6; }
+  .tag.deal { background: var(--red); }
+  textarea { width: 100%; min-height: 150px; margin-top: 10px; background: #0f1115; color: var(--text);
+             border: 1px solid var(--line); border-radius: 10px; padding: 10px; font: 13px/1.4 ui-monospace, Menlo, monospace; resize: vertical; }
+  details summary { cursor: pointer; color: var(--muted); font-size: 13px; margin-top: 8px; }
+  .row { display: flex; gap: 8px; margin-top: 10px; }
+  .btn { border: 0; border-radius: 10px; padding: 12px 10px; font: inherit; font-weight: 700; cursor: pointer;
+         background: #2a2f3a; color: var(--text); }
+  .btn.wa { flex: 1; background: var(--green); color: #00210d; }
+  .btn.wa:active { background: var(--green-d); }
+  .btn.ghost { background: none; border: 1px solid var(--line); }
+  .btn:disabled { opacity: .5; }
+  .meta { color: var(--muted); font-size: 12px; margin-top: 8px; }
+  .empty { text-align: center; color: var(--muted); padding: 50px 10px; }
+  label { display: block; font-size: 13px; color: var(--muted); margin: 12px 0 4px; }
+  input { width: 100%; background: #0f1115; color: var(--text); border: 1px solid var(--line);
+          border-radius: 10px; padding: 12px; font: inherit; }
+  .two { display: flex; gap: 10px; } .two > div { flex: 1; }
+  .hint { font-size: 12px; color: var(--muted); margin-top: 6px; }
+  .err { color: var(--red); margin-top: 10px; font-size: 14px; }
+  #toast { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%); background: #fff; color: #000;
+           padding: 10px 16px; border-radius: 99px; font-weight: 600; font-size: 14px; opacity: 0;
+           transition: opacity .2s; pointer-events: none; max-width: 92vw; text-align: center; z-index: 10; }
+  #toast.show { opacity: 1; }
+  .need { margin-top: 10px; padding: 10px; border: 1px dashed var(--amber); border-radius: 10px; }
+  .need .hint { margin: 0 0 8px; color: var(--amber); }
+  .need .row { margin-top: 0; } .need input { padding: 10px; }
+  .auto { margin-left: auto; border: 1px solid var(--line); background: none; color: var(--muted);
+          border-radius: 99px; padding: 5px 11px; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+  .auto.on { border-color: var(--green); color: var(--green); }
+  #login { max-width: 360px; margin: 18vh auto; padding: 0 16px; }
+</style>
+</head>
+<body>
+
+<div id="login" hidden>
+  <h1>🔥 Caça-Ofertas</h1>
+  <label for="pw">Senha do painel</label>
+  <input id="pw" type="password" autocomplete="current-password">
+  <div class="row"><button class="btn wa" id="enter">Entrar</button></div>
+  <div class="err" id="loginErr"></div>
+</div>
+
+<div id="app" hidden>
+  <header>
+    <h1>🔥 Caça-Ofertas <span class="count" id="count">0</span>
+      <button id="auto" class="auto" hidden></button></h1>
+    <nav>
+      <button data-tab="queue" class="on">Fila</button>
+      <button data-tab="add">+ Adicionar</button>
+      <button data-tab="sent">Enviadas</button>
+    </nav>
+  </header>
+  <main>
+    <section id="queue"></section>
+    <section id="add" hidden>
+      <div class="card">
+        <label for="addUrl">Link do produto (Amazon ou Mercado Livre)</label>
+        <input id="addUrl" inputmode="url" placeholder="https://meli.la/... ou https://amzn.to/...">
+        <div class="hint">No Mercado Livre, prefira colar o link curto (meli.la) gerado no portal de afiliados.</div>
+        <div class="two">
+          <div><label for="addPrice">Preço agora (opcional)</label><input id="addPrice" inputmode="decimal" placeholder="129,90"></div>
+          <div><label for="addList">Preço "de" (opcional)</label><input id="addList" inputmode="decimal" placeholder="199,90"></div>
+        </div>
+        <label for="addTitle">Título (opcional)</label>
+        <input id="addTitle" placeholder="Preenchido automaticamente se possível">
+        <div class="row"><button class="btn wa" id="addBtn">Criar post</button></div>
+        <div class="err" id="addErr"></div>
+      </div>
+      <div id="addResult"></div>
+    </section>
+    <section id="sent" hidden></section>
+  </main>
+</div>
+<div id="toast"></div>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch {} },
+  del(k) { try { localStorage.removeItem(k); } catch {} },
+};
+let senha = store.get('senha') || '';
+const PH = '[COLE SEU LINK AQUI]';
+const files = new Map(); // id -> File da foto (pré-carregada para o compartilhamento ser instantâneo)
+
+const brl = (n) => n == null ? '' : Number(n).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+function toast(msg, ms = 2600) {
+  const t = $('#toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('show'), ms);
+}
+
+async function api(path, opts = {}) {
+  const res = await fetch(path, {
+    ...opts,
+    headers: { 'Content-Type': 'application/json', 'x-senha': senha, ...(opts.headers || {}) },
+  });
+  if (res.status === 401) { logout(); throw new Error('senha'); }
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok && res.status !== 422) throw new Error(data.error || `erro ${res.status}`);
+  return { status: res.status, data };
+}
+
+function logout() { store.del('senha'); senha = ''; $('#app').hidden = true; $('#login').hidden = false; }
+
+$('#enter').onclick = async () => {
+  senha = $('#pw').value.trim();
+  try { await api('/api/offers'); store.set('senha', senha); start(); }
+  catch { $('#loginErr').textContent = 'Senha incorreta.'; }
+};
+$('#pw').onkeydown = (e) => { if (e.key === 'Enter') $('#enter').click(); };
+
+document.querySelectorAll('nav button').forEach((b) => b.onclick = () => {
+  document.querySelectorAll('nav button').forEach((x) => x.classList.toggle('on', x === b));
+  ['queue', 'add', 'sent'].forEach((id) => $('#' + id).hidden = id !== b.dataset.tab);
+  if (b.dataset.tab === 'queue') loadQueue();
+  if (b.dataset.tab === 'sent') loadSent();
+});
+
+function card(o, { sent = false } = {}) {
+  const p = o.products || {};
+  const tags = [
+    `<span class="tag ${p.store}">${p.store === 'amazon' ? 'Amazon' : 'Mercado Livre'}</span>`,
+    o.discount_pct ? `<span class="tag off">${o.discount_pct}% OFF</span>` : '',
+    o.lowest_30d ? `<span class="tag low">📉 menor preço 30d</span>` : '',
+    o.source ? `<span class="tag">via @${esc(o.source.split('/')[0])}</span>` : '',
+    o.deal_type === 'LIGHTNING_DEAL' ? `<span class="tag deal">⚡ relâmpago</span>` : o.deal_type ? `<span class="tag deal">oferta limitada</span>` : '',
+  ].join('');
+  const when = new Date(sent ? o.sent_at : o.created_at).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+  const el = document.createElement('div');
+  el.className = 'card';
+  el.innerHTML = `
+    <div class="top">
+      ${p.image ? `<img src="/api/img?url=${encodeURIComponent(p.image)}" alt="" loading="lazy">` : ''}
+      <div>
+        <div class="title">${esc(p.title)}</div>
+        <div class="price">${o.old_price && Number(o.old_price) > Number(o.price) ? `<s>${brl(o.old_price)}</s>` : ''}${brl(o.price)}</div>
+        <div class="tags">${tags}</div>
+      </div>
+    </div>
+    ${sent ? `<div class="meta">Enviada em ${when}</div>` : `
+    ${o.needs_link && o.message.includes(PH) ? `
+    <div class="need">
+      <div class="hint">⚠️ Falta o SEU link do Mercado Livre. Toque em "abrir produto", gere seu link de afiliado (Compartilhar) e cole aqui:</div>
+      <div class="row"><input data-a="link" inputmode="url" placeholder="https://meli.la/..."><button class="btn" data-a="uselink">Usar</button></div>
+    </div>` : ''}
+    <details><summary>Ver / editar mensagem</summary><textarea>${esc(o.message)}</textarea></details>
+    <div class="row">
+      <button class="btn ghost" data-a="skip" title="Pular">✕</button>
+      <button class="btn ghost" data-a="copy">Copiar</button>
+      <button class="btn wa" data-a="share">Enviar no WhatsApp</button>
+    </div>
+    <div class="meta">Encontrada em ${when} · <a href="${esc(p.url)}" target="_blank" rel="noopener" style="color:inherit">abrir produto</a> · <a href="#" data-a="done" style="color:inherit">já enviei</a></div>`}
+  `;
+  if (sent) return el;
+
+  const text = () => el.querySelector('textarea').value;
+  if (p.image) prefetch(o.id, p.image);
+
+  el.querySelector('[data-a=copy]').onclick = () => copy(text()).then(() => toast('Texto copiado'));
+  el.querySelector('[data-a=skip]').onclick = () => mark(o, 'rejected', el);
+  el.querySelector('[data-a=done]').onclick = (e) => { e.preventDefault(); mark(o, 'sent', el, text()); };
+  el.querySelector('[data-a=share]').onclick = () => {
+    if (text().includes(PH)) { toast('Cole o seu link do Mercado Livre primeiro'); el.querySelector('[data-a=link]')?.focus(); return; }
+    share(o, el, text());
+  };
+  const use = el.querySelector('[data-a=uselink]');
+  if (use) use.onclick = () => {
+    const v = el.querySelector('[data-a=link]').value.trim();
+    if (!/^https?:\/\/(meli\.la|[\w.]*mercadoli[vb]re\.com)/i.test(v)) return toast('Cole um link meli.la ou do Mercado Livre');
+    const ta = el.querySelector('textarea'); ta.value = ta.value.split(PH).join(v);
+    el.querySelector('.need').remove(); toast('Link aplicado!');
+  };
+  return el;
+}
+
+async function prefetch(id, url) {
+  if (files.has(id)) return;
+  try {
+    const r = await fetch('/api/img?url=' + encodeURIComponent(url));
+    const blob = await r.blob();
+    const ext = blob.type.includes('png') ? 'png' : blob.type.includes('webp') ? 'webp' : 'jpg';
+    files.set(id, new File([blob], `oferta-${id}.${ext}`, { type: blob.type || 'image/jpeg' }));
+  } catch {}
+}
+
+function copy(t) {
+  if (navigator.clipboard?.writeText) return navigator.clipboard.writeText(t).catch(() => fallbackCopy(t));
+  return Promise.resolve(fallbackCopy(t));
+}
+function fallbackCopy(t) {
+  const a = document.createElement('textarea'); a.value = t; document.body.appendChild(a);
+  a.select(); try { document.execCommand('copy'); } catch {} a.remove();
+}
+
+async function share(o, el, text) {
+  copy(text); // garante o texto na área de transferência (no iPhone o WhatsApp às vezes ignora a legenda)
+  const file = files.get(o.id);
+  const withImg = file && navigator.canShare?.({ files: [file], text });
+  try {
+    if (withImg) {
+      await navigator.share({ files: [file], text });
+    } else if (navigator.share) {
+      await navigator.share({ text });
+    } else {
+      window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank');
+    }
+    await mark(o, 'sent', el, text);
+    toast(withImg ? 'Enviada! Se a legenda não apareceu, é só colar o texto.' : 'Enviada!', 3500);
+  } catch (e) {
+    if (e.name !== 'AbortError') toast('Não deu para compartilhar — texto copiado, cole no WhatsApp.');
+  }
+}
+
+async function mark(o, action, el, message) {
+  try {
+    await api('/api/offers', { method: 'POST', body: JSON.stringify({ id: o.id, action, message }) });
+    el.style.transition = 'opacity .25s'; el.style.opacity = 0;
+    setTimeout(() => { el.remove(); updateCount(); }, 250);
+    if (action === 'rejected') toast('Pulada');
+  } catch (e) { toast('Erro: ' + e.message); }
+}
+
+function updateCount() { $('#count').textContent = $('#queue').querySelectorAll('.card').length; }
+
+async function loadQueue() {
+  const q = $('#queue');
+  try {
+    const { data } = await api('/api/offers');
+    q.innerHTML = '';
+    if (!data.length) q.innerHTML = '<div class="empty">Nenhuma oferta na fila agora.<br>Novas ofertas do canal aparecem em poucos minutos.</div>';
+    data.forEach((o) => q.appendChild(card(o)));
+    updateCount();
+  } catch (e) { if (e.message !== 'senha') q.innerHTML = `<div class="empty">Erro: ${esc(e.message)}</div>`; }
+}
+
+async function loadSent() {
+  const s = $('#sent');
+  try {
+    const { data } = await api('/api/offers?status=sent');
+    s.innerHTML = data.length ? '' : '<div class="empty">Nada enviado ainda.</div>';
+    data.forEach((o) => s.appendChild(card(o, { sent: true })));
+  } catch (e) { if (e.message !== 'senha') s.innerHTML = `<div class="empty">Erro: ${esc(e.message)}</div>`; }
+}
+
+$('#addBtn').onclick = async () => {
+  const btn = $('#addBtn'); btn.disabled = true; $('#addErr').textContent = '';
+  try {
+    const body = { url: $('#addUrl').value, price: $('#addPrice').value, listPrice: $('#addList').value, title: $('#addTitle').value };
+    const { status, data } = await api('/api/add', { method: 'POST', body: JSON.stringify(body) });
+    if (status === 422) {
+      const f = data.found || {};
+      if (f.title && !$('#addTitle').value) $('#addTitle').value = f.title;
+      if (f.price && !$('#addPrice').value) $('#addPrice').value = String(f.price).replace('.', ',');
+      $('#addErr').textContent = 'Não consegui ler ' + data.needs.map((n) => n === 'price' ? 'o preço' : 'o título').join(' e ') + ' automaticamente. Preencha e toque de novo.';
+      return;
+    }
+    const { data: list } = await api('/api/offers');
+    const o = list.find((x) => x.id === data.id);
+    const r = $('#addResult'); r.innerHTML = '';
+    if (o) { const c = card(o); c.querySelector('details').open = true; r.appendChild(c); }
+    ['#addUrl', '#addPrice', '#addList', '#addTitle'].forEach((s) => $(s).value = '');
+    toast('Post criado!');
+  } catch (e) { $('#addErr').textContent = e.message; }
+  finally { btn.disabled = false; }
+};
+
+async function loadSettings(body) {
+  try {
+    const { data } = await api('/api/settings', body ? { method: 'POST', body: JSON.stringify(body) } : {});
+    const b = $('#auto'); b.hidden = !data.whatsapp;
+    b.classList.toggle('on', data.autosend);
+    b.textContent = data.autosend ? (data.quiet ? '🌙 Automático (silêncio)' : '🤖 Automático ligado') : '⏸ Automático pausado';
+    b.onclick = () => {
+      if (data.autosend && !confirm('Pausar o envio automático para o grupo?')) return;
+      loadSettings({ autosend: !data.autosend }).then(() => toast(data.autosend ? 'Envio automático pausado' : 'Envio automático ligado'));
+    };
+  } catch {}
+}
+
+function start() { loadSettings(); $('#login').hidden = true; $('#app').hidden = false; loadQueue(); }
+if (senha) api('/api/offers').then(start).catch(logout); else logout();
+</script>
+</body>
+</html>
