@@ -1,0 +1,8 @@
+{
+  "outputDirectory": "public",
+  "functions": {
+    "api/hunt.js": { "maxDuration": 60 },
+    "api/mirror.js": { "maxDuration": 60 },
+    "api/add.js": { "maxDuration": 30 }
+  }
+}
