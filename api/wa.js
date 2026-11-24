@@ -12,7 +12,7 @@ export default async function handler(req, res) {
     if (action === 'qr') return res.status(200).json({ qr: await evoAdmin.qr(), state: await evoAdmin.state() });
     if (action === 'groups') return res.status(200).json({ groups: await evoAdmin.groups(), current: (process.env.WA_GROUP_ID || '').trim() });
     if (action === 'test') {
-      await evoAdmin.test('✅ Teste: este grupo agora também está conectado pela Evolution API.');
+      await evoAdmin.test('✅ Caça-Ofertas: teste da Evolution API — seu chip está conectado e enviando.');
       return res.status(200).json({ ok: true });
     }
     if (action === 'use' && req.method === 'POST') {
