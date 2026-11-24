@@ -8,4 +8,5 @@ Painel: https://ofertas-pedro.vercel.app
 - Envia para o grupo do WhatsApp via Z-API Omni (WA_GROUP_ID na Vercel).
 - Horário de silêncio e intervalo: tabela state no Supabase (quiet_hours, send_interval_sec).
 - Ligar/desligar o envio: botão no topo do painel.
-- Se o link curto parar: a sessão da Amazon expirou; atualize AMAZON_COOKIE na Vercel e republique.
+- Alerta no WhatsApp (ALERT_PHONE) quando o link curto cai ou volta.
+- Se o link curto parar: atualize AMAZON_COOKIE na Vercel e republique.
