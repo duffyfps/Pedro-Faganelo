@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Conectar WhatsApp</title>
+<style>
+  body { margin: 0; background: #0f1115; color: #eef0f4; font: 15px/1.45 -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 480px; margin: 0 auto; padding: 20px 14px 60px; }
+  h1 { font-size: 19px; margin: 0 0 14px; }
+  .card { background: #181b22; border: 1px solid #262a33; border-radius: 14px; padding: 14px; margin-bottom: 14px; }
+  .muted { color: #9097a6; font-size: 13px; }
+  button { background: #25d366; color: #000; border: 0; border-radius: 10px; padding: 11px 14px; font: inherit; font-weight: 700; cursor: pointer; width: 100%; margin-top: 8px; }
+  button.sec { background: #2a2f3a; color: #eef0f4; }
+  input { width: 100%; box-sizing: border-box; background: #0f1115; color: #eef0f4; border: 1px solid #262a33; border-radius: 10px; padding: 11px; font: inherit; }
+  #qr img { width: 100%; max-width: 300px; display: block; margin: 10px auto; background: #fff; border-radius: 12px; padding: 8px; }
+  .pill { display: inline-block; padding: 2px 9px; border-radius: 99px; font-size: 12px; font-weight: 700; background: #2a2f3a; }
+  .pill.ok { background: #25d366; color: #000; } .pill.bad { background: #ff5d5d; }
+  li { margin: 4px 0; font-size: 13px; } li.cur { color: #25d366; font-weight: 700; }
+  .err { color: #ff5d5d; font-size: 13px; margin-top: 8px; white-space: pre-wrap; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Conectar WhatsApp (Evolution)</h1>
+
+  <div class="card" id="login" hidden>
+    <div class="muted">Senha do painel</div>
+    <input id="pw" type="password" autocomplete="current-password">
+    <button id="enter">Entrar</button>
+    <div class="err" id="loginErr"></div>
+  </div>
+
+  <div id="app" hidden>
+    <div class="card">
+      <div>Conexão do chip: <span class="pill" id="state">…</span></div>
+      <div style="margin-top:6px">Enviando ofertas por: <span class="pill" id="prov">…</span></div>
+    </div>
+
+    <div class="card">
+      <b>1. Ler o QR code</b>
+      <div class="muted">No celular do chip: WhatsApp → Aparelhos conectados → Conectar um aparelho. A Z-API continua conectada ao mesmo tempo.</div>
+      <button id="qrBtn">Mostrar QR code</button>
+      <div id="qr"></div>
+    </div>
+
+    <div class="card">
+      <b>2. Conferir o grupo</b>
+      <button class="sec" id="grpBtn">Ver grupos do chip</button>
+      <ul id="groups"></ul>
+    </div>
+
+    <div class="card">
+      <b>3. Teste</b>
+      <div class="muted">Manda uma mensagem de teste no grupo atual pela Evolution (sem mexer no envio das ofertas).</div>
+      <button class="sec" id="testBtn">Enviar teste</button>
+    </div>
+
+    <div class="card">
+      <b>4. Trocar</b>
+      <button id="useEvo">Usar Evolution nas ofertas</button>
+      <button class="sec" id="useZapi">Voltar para Z-API</button>
+    </div>
+    <div class="err" id="err"></div>
+  </div>
+</main>
+<script>
+const $ = (s) => document.querySelector(s);
+let senha = ''; try { senha = localStorage.getItem('senha') || ''; } catch {}
+let timer = null;
+
+async function call(action, method = 'GET', extra = '') {
+  const r = await fetch(`/api/wa?action=${action}${extra}`, { method, headers: { 'x-senha': senha } });
+  if (r.status === 401) { showLogin(); throw new Error('senha'); }
+  const d = await r.json().catch(() => ({}));
+  if (d.error) { $('#err').textContent = d.error; throw new Error(d.error); }
+  $('#err').textContent = '';
+  return d;
+}
+function showLogin() { $('#app').hidden = true; $('#login').hidden = false; }
+function paint(state, prov) {
+  const open = state === 'open';
+  $('#state').textContent = open ? 'conectado' : state;
+  $('#state').className = 'pill ' + (open ? 'ok' : 'bad');
+  if (prov) { $('#prov').textContent = prov === 'zapi' ? 'Z-API' : 'Evolution'; $('#prov').className = 'pill' + (prov === 'evolution' ? ' ok' : ''); }
+  if (open) { $('#qr').innerHTML = '<p class="muted">Chip conectado ✅</p>'; clearInterval(timer); }
+}
+async function status() { const d = await call('status'); paint(d.state, d.provider); }
+async function start() { $('#login').hidden = true; $('#app').hidden = false; await status().catch(() => {}); }
+
+$('#enter').onclick = async () => {
+  senha = $('#pw').value.trim();
+  try { await call('status'); try { localStorage.setItem('senha', senha); } catch {} start(); }
+  catch { $('#loginErr').textContent = 'Senha incorreta.'; }
+};
+$('#qrBtn').onclick = async () => {
+  const show = async () => {
+    const d = await call('qr');
+    if (d.state === 'open') return paint('open');
+    $('#qr').innerHTML = d.qr ? `<img src="${d.qr}" alt="QR code">` + '<p class="muted">O código muda a cada ~20 s; esta tela atualiza sozinha.</p>' : '<p class="muted">Gerando… aguarde.</p>';
+    paint(d.state);
+  };
+  clearInterval(timer); await show(); timer = setInterval(() => show().catch(() => {}), 20000);
+};
+$('#grpBtn').onclick = async () => {
+  const d = await call('groups');
+  const cur = d.current.replace(/-group$/, '@g.us');
+  $('#groups').innerHTML = d.groups.map((g) => `<li class="${g.id === cur ? 'cur' : ''}">${g.name || '(sem nome)'}${g.id === cur ? ' ← grupo atual' : ''}</li>`).join('') || '<li>Nenhum grupo</li>';
+};
+$('#testBtn').onclick = async () => { await call('test'); alert0('Teste enviado. Confira o grupo.'); };
+$('#useEvo').onclick = async () => { const d = await call('use', 'POST', '&to=evolution'); paint($('#state').textContent === 'conectado' ? 'open' : $('#state').textContent, d.provider); };
+$('#useZapi').onclick = async () => { const d = await call('use', 'POST', '&to=zapi'); paint($('#state').textContent === 'conectado' ? 'open' : $('#state').textContent, d.provider); };
+function alert0(m) { $('#err').style.color = '#25d366'; $('#err').textContent = m; setTimeout(() => { $('#err').style.color = ''; }, 4000); }
+
+if (senha) start(); else showLogin();
+</script>
+</body>
+</html>
