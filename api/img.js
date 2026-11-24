@@ -1,5 +1,5 @@
 // Repassa a foto do produto para o painel poder compartilhá-la no WhatsApp
-const ALLOWED = /(^|\.)(media-amazon\.com|ssl-images-amazon\.com|mlstatic\.com)$/i;
+const ALLOWED = /(^|\.)(media-amazon\.com|ssl-images-amazon\.com|mlstatic\.com|telesco\.pe)$/i;
 
 export default async function handler(req, res) {
   try {

@@ -9,6 +9,10 @@ import { requireCronKey } from '../lib/auth.js';
 import { sendDue } from '../lib/sender.js';
 
 const TIME_BUDGET_MS = 45_000;
+
+// Link da Amazon no formato mais curto aceito: amazon.com.br/dp/ASIN?tag=SUA_TAG
+const amazonLink = (asin) =>
+  asin && process.env.AMAZON_TAG ? `https://amazon.com.br/dp/${asin}?tag=${encodeURIComponent(process.env.AMAZON_TAG.trim())}` : null;
 const FIRST_RUN_POSTS = 5;
 
 async function mlData(ids) {
@@ -97,7 +101,7 @@ export default async function handler(req, res) {
               image: null,
               price: j.info.price,
               listPrice: j.info.listPrice,
-              url: `https://www.amazon.com.br/dp/${j.asin}?tag=${encodeURIComponent(process.env.AMAZON_TAG.trim())}`,
+              url: amazonLink(j.asin),
             };
           }
         } else {
@@ -120,6 +124,8 @@ export default async function handler(req, res) {
           };
           if (!p.title || !p.price) { out.skipped.push(`${j.post.id}: ML sem título/preço`); continue; }
         }
+        if (j.post.image) p.image = j.post.image; // mesma foto do post original
+        if (p.store === 'amazon') p.url = amazonLink(j.asin) || p.url;
         p.coupons = j.info.coupons;
         p.extras = j.info.extras;
         try {
