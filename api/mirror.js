@@ -7,6 +7,7 @@ import { fetchChannel, storeOf, followRedirects, parsePostText } from '../lib/te
 import { processProduct } from '../lib/offers.js';
 import { requireCronKey } from '../lib/auth.js';
 import { sendDue } from '../lib/sender.js';
+import { shortAmazon } from '../lib/amazonShort.js';
 
 const TIME_BUDGET_MS = 45_000;
 
@@ -125,7 +126,12 @@ export default async function handler(req, res) {
           if (!p.title || !p.price) { out.skipped.push(`${j.post.id}: ML sem título/preço`); continue; }
         }
         if (j.post.image) p.image = j.post.image; // mesma foto do post original
-        if (p.store === 'amazon') p.url = amazonLink(j.asin) || p.url;
+        if (p.store === 'amazon') {
+          const short = await shortAmazon(j.asin); // link.amazon/xxxx com a sua tag
+          p.url = short.url || amazonLink(j.asin) || p.url;
+          out.shortLinks = out.shortLinks || [];
+          out.shortLinks.push(short.url ? 'curto' : `normal: ${short.why}`);
+        }
         p.coupons = j.info.coupons;
         p.extras = j.info.extras;
         try {
