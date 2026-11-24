@@ -8,6 +8,7 @@ import { processProduct } from '../lib/offers.js';
 import { requireCronKey } from '../lib/auth.js';
 import { sendDue } from '../lib/sender.js';
 import { shortAmazon } from '../lib/amazonShort.js';
+import { trackShortLink } from '../lib/alerts.js';
 
 const TIME_BUDGET_MS = 45_000;
 
@@ -131,6 +132,7 @@ export default async function handler(req, res) {
           p.url = short.url || amazonLink(j.asin) || p.url;
           out.shortLinks = out.shortLinks || [];
           out.shortLinks.push(short.url ? 'curto' : `normal: ${short.why}`);
+          if (process.env.AMAZON_COOKIE) await trackShortLink(!!short.url, short.why).catch(() => {});
         }
         p.coupons = j.info.coupons;
         p.extras = j.info.extras;
