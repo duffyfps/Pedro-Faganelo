@@ -146,13 +146,16 @@ export default async function handler(req, res) {
         }
         if (j.post.image) p.image = j.post.image; // mesma foto do post original
         if (p.store === 'amazon') {
-          const short = await shortAmazon(j.asin); // link.amazon/xxxx com a sua tag
+          // Link curto (link.amazon) só quando ligado no banco: state amazon_short = 'on'
+          const shortOn = (await readState('amazon_short')) === 'on';
+          const short = shortOn ? await shortAmazon(j.asin) : { url: null, why: 'desligado' };
           p.url = short.url || amazonLink(j.asin) || p.url;
           out.shortLinks = out.shortLinks || [];
           out.shortLinks.push(short.url ? 'curto' : `normal: ${short.why}`);
-          if (process.env.AMAZON_COOKIE) await trackShortLink(!!short.url, short.why).catch(() => {});
+          if (shortOn && process.env.AMAZON_COOKIE) await trackShortLink(!!short.url, short.why).catch(() => {});
         }
         p.coupons = j.info.coupons;
+        p.hook = j.info.hook;
         p.extras = j.info.extras;
         try {
           if (await processProduct(p, { source })) out.queued++;
