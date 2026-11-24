@@ -53,7 +53,7 @@
 
     <div class="card">
       <b>3. Teste</b>
-      <div class="muted">Manda uma mensagem de teste no grupo atual pela Evolution (sem mexer no envio das ofertas).</div>
+      <div class="muted">Manda uma mensagem de teste no seu WhatsApp pessoal (nunca no grupo de ofertas).</div>
       <button class="sec" id="testBtn">Enviar teste</button>
     </div>
 
@@ -108,7 +108,7 @@ $('#grpBtn').onclick = async () => {
   const cur = d.current.replace(/-group$/, '@g.us');
   $('#groups').innerHTML = d.groups.map((g) => `<li class="${g.id === cur ? 'cur' : ''}">${g.name || '(sem nome)'}${g.id === cur ? ' ← grupo atual' : ''}</li>`).join('') || '<li>Nenhum grupo</li>';
 };
-$('#testBtn').onclick = async () => { await call('test'); alert0('Teste enviado. Confira o grupo.'); };
+$('#testBtn').onclick = async () => { await call('test'); alert0('Teste enviado. Confira seu WhatsApp pessoal.'); };
 $('#useEvo').onclick = async () => { const d = await call('use', 'POST', '&to=evolution'); paint($('#state').textContent === 'conectado' ? 'open' : $('#state').textContent, d.provider); };
 $('#useZapi').onclick = async () => { const d = await call('use', 'POST', '&to=zapi'); paint($('#state').textContent === 'conectado' ? 'open' : $('#state').textContent, d.provider); };
 function alert0(m) { $('#err').style.color = '#25d366'; $('#err').textContent = m; setTimeout(() => { $('#err').style.color = ''; }, 4000); }
