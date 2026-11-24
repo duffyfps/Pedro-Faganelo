@@ -24,6 +24,11 @@ export default async function handler(req, res) {
       }
       return res.status(200).json(out);
     }
+    if (action === 'ptest') {
+      // Texto livre no SEU privado (diagnóstico da prévia de links)
+      const r = await evoAdmin.raw(String(req.query.text || '').slice(0, 1000));
+      return res.status(200).json(r);
+    }
     if (action === 'mode' && req.method === 'POST') {
       const to = req.query.to === 'preview' ? 'preview' : 'photo';
       await db.upsert('state', [{ key: 'send_mode', value: to }], 'key');
