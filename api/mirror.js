@@ -8,7 +8,8 @@ import { processProduct } from '../lib/offers.js';
 import { requireCronKey } from '../lib/auth.js';
 import { sendDue } from '../lib/sender.js';
 import { shortAmazon } from '../lib/amazonShort.js';
-import { trackShortLink } from '../lib/alerts.js';
+import { trackShortLink, trackLink } from '../lib/alerts.js';
+import { resolveCompetitorLink, createMlLink } from '../lib/mlLink.js';
 
 const TIME_BUDGET_MS = 45_000;
 
@@ -107,8 +108,17 @@ export default async function handler(req, res) {
             };
           }
         } else {
-          const ids = j.chain.map(idsFromUrl).find((x) => x.item || x.product) || {};
-          const openUrl = ids.product
+          let ids = j.chain.map(idsFromUrl).find((x) => x.item || x.product) || {};
+          let productUrl = null;
+          // Link do concorrente cai no perfil social: abre a página e pega o produto em destaque
+          if (!ids.item && !ids.product && process.env.ML_COOKIE) {
+            const r = await resolveCompetitorLink(j.chain.at(-1));
+            if (r.product) { productUrl = r.product; ids = idsFromUrl(r.product); }
+            else out.mlLinks = [...(out.mlLinks || []), `produto: ${r.why}`];
+          }
+          const openUrl = productUrl
+            ? productUrl
+            : ids.product
             ? `https://www.mercadolivre.com.br/p/${ids.product}`
             : ids.item
               ? `https://produto.mercadolivre.com.br/${ids.item.replace(/^MLB/, 'MLB-')}`
@@ -125,6 +135,13 @@ export default async function handler(req, res) {
             url: process.env.ML_AUTO_LINK === 'true' && (ids.item || ids.product) ? affiliateLink(openUrl, openUrl) : null,
           };
           if (!p.title || !p.price) { out.skipped.push(`${j.post.id}: ML sem título/preço`); continue; }
+          // Gera o SEU meli.la pelo gerador oficial de afiliados
+          if (process.env.ML_COOKIE && (ids.item || ids.product)) {
+            const ml = await createMlLink(openUrl);
+            p.url = ml.url || null; // sem link garantido: fica no painel para você colar o seu
+            out.mlLinks = [...(out.mlLinks || []), ml.url ? 'meli.la' : `sem link: ${ml.why}`];
+            await trackLink('ml', !!ml.url, ml.why).catch(() => {});
+          }
         }
         if (j.post.image) p.image = j.post.image; // mesma foto do post original
         if (p.store === 'amazon') {
