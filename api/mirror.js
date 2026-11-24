@@ -8,7 +8,8 @@ import { processProduct } from '../lib/offers.js';
 import { requireCronKey } from '../lib/auth.js';
 import { sendDue } from '../lib/sender.js';
 import { shortAmazon } from '../lib/amazonShort.js';
-import { trackShortLink, trackLink } from '../lib/alerts.js';
+import { trackShortLink, trackLink, watch, readState, writeState } from '../lib/alerts.js';
+import { inQuietHours } from '../lib/sender.js';
 import { resolveCompetitorLink, createMlLink } from '../lib/mlLink.js';
 
 const TIME_BUDGET_MS = 45_000;
@@ -167,6 +168,26 @@ export default async function handler(req, res) {
       out.errors.push(`${channel}: ${e.message.slice(0, 200)}`);
     }
   }
+
+  // Vigia: canal parado ou leitura do Telegram falhando (só em horário de envio)
+  try {
+    const now = Date.now();
+    if (out.posts > 0) await writeState('last_post_at', now);
+    const tgFail = out.errors.some((e) => /Telegram|xetdas/i.test(e));
+    const fails = tgFail ? (Number(await readState('tg_fail_count')) || 0) + 1 : 0;
+    await writeState('tg_fail_count', fails);
+    await watch('telegram', fails >= 20,
+      'não estou conseguindo ler o canal do Telegram há ~5 minutos. Pode ser instabilidade ou mudança no canal.',
+      'a leitura do canal do Telegram voltou ao normal.');
+    const quiet = (await readState('quiet_hours')) ?? process.env.QUIET_HOURS ?? '22-8';
+    const quietNow = inQuietHours(new Date(), quiet);
+    if (quietNow) await writeState('last_post_at', now); // à noite não conta: o relógio recomeça às 8h
+    const lastPost = Number(await readState('last_post_at')) || now;
+    const idleMin = (now - lastPost) / 60000;
+    await watch('idle', !quietNow && idleMin > 45,
+      `nenhum post novo no canal há ${Math.round(idleMin)} minutos (horário de envio). O canal pode ter parado ou mudado de formato.`,
+      'o canal voltou a postar e as ofertas estão chegando de novo.');
+  } catch {}
 
   try {
     out.whatsapp = await sendDue();
