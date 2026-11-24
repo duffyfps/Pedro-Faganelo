@@ -67,7 +67,8 @@ export default async function handler(req, res) {
       amzJobs.forEach((j) => (j.asin = j.chain.map(asinFromUrl).find(Boolean)));
       const asins = [...new Set(amzJobs.map((j) => j.asin).filter(Boolean))];
       const found = new Map();
-      for (let i = 0; i < asins.length; i += 10) {
+      const useApi = !!(process.env.AMAZON_CLIENT_ID && process.env.AMAZON_CLIENT_SECRET);
+      for (let i = 0; useApi && i < asins.length; i += 10) {
         try {
           (await getItems(asins.slice(i, i + 10))).forEach((p) => found.set(p.id, p));
         } catch (e) {
@@ -80,9 +81,25 @@ export default async function handler(req, res) {
         const source = `${channel}/${j.post.id}`;
         let p = null;
         if (j.store === 'amazon') {
-          const base = j.asin && found.get(`amz:${j.asin}`);
-          if (!base) { out.skipped.push(`${j.post.id}: Amazon sem oferta/ASIN`); continue; }
-          p = { ...base };
+          if (!j.asin) { out.skipped.push(`${j.post.id}: Amazon sem ASIN`); continue; }
+          const base = found.get(`amz:${j.asin}`);
+          if (base) p = { ...base };
+          else {
+            // Sem a API da Amazon: usa título e preço do post + link com a SUA tag
+            if (!process.env.AMAZON_TAG || !j.info.title || !j.info.price) {
+              out.skipped.push(`${j.post.id}: Amazon sem dados`);
+              continue;
+            }
+            p = {
+              id: `amz:${j.asin}`,
+              store: 'amazon',
+              title: j.info.title,
+              image: null,
+              price: j.info.price,
+              listPrice: j.info.listPrice,
+              url: `https://www.amazon.com.br/dp/${j.asin}?tag=${encodeURIComponent(process.env.AMAZON_TAG.trim())}`,
+            };
+          }
         } else {
           const ids = j.chain.map(idsFromUrl).find((x) => x.item || x.product) || {};
           const openUrl = ids.product
