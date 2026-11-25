@@ -1,25 +1,32 @@
 // Página de cada oferta (/p/<código>). As tags og:* fazem o WhatsApp mostrar a prévia (foto + nome + preço).
 import { db } from '../lib/db.js';
-import { layout, card, joinBox, catsGrid, catOf, CATEGORIES, esc, brl, img, storeName, storeLink, ago, codeOf, idOf, SITE } from '../lib/site.js';
+import { layout, card, joinBox, catsGrid, catOf, CATEGORIES, esc, brl, img, storeName, naLoja, storeLink, ago, codeOf, idOf, SITE } from '../lib/site.js';
 
 const PCSS = `
-.prod{display:grid;grid-template-columns:1fr;gap:16px;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px}
-@media(min-width:820px){.prod{grid-template-columns:420px 1fr;padding:22px}}
-.prod .pic{background:#fff;border-radius:14px;aspect-ratio:1/1;display:grid;place-items:center;overflow:hidden;position:relative}
+.prod{display:grid;grid-template-columns:1fr;gap:22px;background:#fff;border:1px solid var(--line);border-radius:22px;padding:16px;box-shadow:var(--shadow)}
+@media(min-width:860px){.prod{grid-template-columns:460px 1fr;padding:26px;gap:34px}}
+.prod .pic{background:#fff;border:1px solid #f0ede6;border-radius:16px;aspect-ratio:1/1;display:grid;place-items:center;overflow:hidden;position:relative;padding:18px}
 .prod .pic img{max-width:100%;max-height:100%;object-fit:contain}
-.prod .badge{position:absolute;top:12px;left:12px;background:var(--red);color:#fff;font-weight:900;border-radius:8px;padding:4px 9px}
+.prod .badge{position:absolute;top:14px;left:14px;background:var(--red);color:#fff;font-weight:900;font-size:18px;border-radius:10px;padding:5px 11px;box-shadow:0 6px 16px rgba(224,38,47,.35)}
 .prod .meta{font-size:12px;color:var(--muted);display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-.prod .store{background:var(--card2);border:1px solid var(--line);border-radius:99px;padding:3px 10px;color:var(--text);font-weight:700}
-.prod h1{font-size:20px;margin:10px 0 12px;line-height:1.3}
-.prod .old{color:var(--muted);text-decoration:line-through}
-.prod .price{font-size:34px;font-weight:900;color:var(--gold);line-height:1.1}
-.prod .save{color:var(--green);font-weight:700;font-size:13px;margin-top:4px}
-.coupon{margin-top:14px;border:1px dashed var(--gold);border-radius:12px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;gap:10px;background:#16130a}
-.coupon code{font-size:17px;font-weight:900;letter-spacing:1px;color:var(--gold2)}
-.coupon button{background:none;border:1px solid var(--gold);color:var(--gold);border-radius:8px;padding:7px 12px;font-weight:800;cursor:pointer}
+.prod h1{font-size:23px;margin:12px 0 16px;line-height:1.3;letter-spacing:-.2px}
+.pricebox{background:#faf8f3;border:1px solid var(--line);border-radius:16px;padding:16px 18px}
+.pricebox .old{color:var(--muted);text-decoration:line-through;font-size:15px}
+.pricebox .price{font-size:40px;font-weight:900;line-height:1.05;letter-spacing:-.8px}
+.pricebox .save{display:inline-block;margin-top:8px;background:#e7f7ed;color:#137a3a;font-weight:800;font-size:13px;border-radius:8px;padding:4px 9px}
+.coupon{margin-top:12px;border:2px dashed var(--gold);border-radius:14px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;gap:10px;background:#fffaea}
+.coupon span{font-size:13px;color:#6b5310}.coupon code{display:block;font-size:20px;font-weight:900;letter-spacing:1.5px;color:var(--text)}
+.coupon button{background:var(--ink);border:0;color:#fff;border-radius:10px;padding:10px 14px;font-weight:800;cursor:pointer;font-family:inherit}
 .actions{display:grid;gap:10px;margin-top:16px}
-.actions .btn{width:100%;font-size:17px;padding:15px}
-.note{color:var(--muted);font-size:12px;margin-top:10px}
+.actions .btn{width:100%;font-size:18px;padding:17px}
+.actions .btn.line{font-size:15px;padding:13px}
+.ptrust{list-style:none;padding:0;margin:16px 0 0;display:grid;gap:7px;font-size:13px;color:#4c4a45}
+.note{color:var(--muted);font-size:12px;margin-top:12px}
+.sticky{position:fixed;left:0;right:0;bottom:0;z-index:30;background:#fff;border-top:1px solid var(--line);box-shadow:0 -6px 20px rgba(0,0,0,.08);padding:10px 14px;display:flex;align-items:center;gap:12px}
+.sticky b{font-size:20px;font-weight:900;white-space:nowrap}.sticky small{display:block;font-size:11px;color:var(--muted);font-weight:600}
+.sticky .btn{flex:1;padding:13px}
+@media(min-width:860px){.sticky{display:none}}
+@media(max-width:859px){body{padding-bottom:76px}}
 `;
 
 export default async function handler(req, res) {
@@ -60,27 +67,35 @@ ${pic ? `<meta property="og:image" content="${esc(pic)}"><meta property="og:imag
 <style>${PCSS}</style>`;
 
     const body = `
-<div class="crumbs"><a href="/">Início</a> / <a href="/ofertas">Ofertas</a> / <a href="/ofertas?loja=${p.store === 'amazon' ? 'amazon' : 'ml'}">${store}</a> / <a href="/categoria/${cat.slug}">${esc(cat.name)}</a></div>
+<div class="crumbs"><a href="/">Início</a> / <a href="/ofertas?loja=${p.store === 'amazon' ? 'amazon' : 'ml'}">${store}</a> / <a href="/categoria/${cat.slug}">${esc(cat.name)}</a></div>
 <div class="prod">
   <div class="pic">${pic ? `<img src="${esc(img(p.image))}" alt="${esc(p.title)}">` : ''}${o.discount_pct ? `<span class="badge">-${o.discount_pct}%</span>` : ''}</div>
   <div>
-    <div class="meta"><span class="store">Promoção da loja: ${store}</span><span>${ago(when)}</span><span>#parceria</span></div>
+    <div class="meta"><span class="store ${p.store === 'amazon' ? 'amazon' : 'ml'}">${store}</span><span>Publicada ${ago(when)}</span></div>
     <h1>${esc(p.title)}</h1>
-    ${saved ? `<div class="old">${brl(o.old_price)}</div>` : ''}
-    <div class="price">${brl(o.price)}</div>
-    ${saved ? `<div class="save">Você economiza ${brl(saved)}${o.discount_pct ? ` (${o.discount_pct}% OFF)` : ''}</div>` : ''}
-    ${coupons.map((c) => `<div class="coupon"><span>Use o cupom <code>${esc(c)}</code></span><button onclick="navigator.clipboard.writeText('${esc(c)}');this.textContent='Copiado!'">Copiar</button></div>`).join('')}
-    <div class="actions">
-      ${link ? `<a class="btn gold" href="${esc(link)}" rel="nofollow sponsored">Pegar promoção ↗</a>` : ''}
-      <a class="btn ghost" href="${esc(share)}">Compartilhar no WhatsApp</a>
+    <div class="pricebox">
+      ${saved ? `<div class="old">De ${brl(o.old_price)}</div>` : ''}
+      <div class="price">${brl(o.price)}</div>
+      ${saved ? `<span class="save">Você economiza ${brl(saved)}${o.discount_pct ? ` · ${o.discount_pct}% OFF` : ''}</span>` : ''}
     </div>
-    <div class="note">Oferta publicada ${ago(when)}. O preço e a disponibilidade podem mudar a qualquer momento na loja.</div>
+    ${coupons.map((c) => `<div class="coupon"><span>Use o cupom no carrinho<code>${esc(c)}</code></span><button onclick="navigator.clipboard.writeText('${esc(c)}');this.textContent='Copiado ✓'">Copiar cupom</button></div>`).join('')}
+    <div class="actions">
+      ${link ? `<a class="btn red" href="${esc(link)}" rel="nofollow sponsored">Pegar promoção ${naLoja(p.store)} →</a>` : ''}
+      <a class="btn line" href="${esc(share)}">📲 Mandar pra alguém no WhatsApp</a>
+    </div>
+    <ul class="ptrust">
+      <li>🛡️ Compra feita direto ${naLoja(p.store)}, com a garantia da loja</li>
+      <li>⚡ Preço de oferta: pode mudar ou acabar a qualquer momento</li>
+      <li>🎩 Selecionada pela equipe ${esc(SITE())}</li>
+    </ul>
+    <div class="note">#publicidade · Como afiliados, podemos receber comissão sem custo extra para você.</div>
   </div>
 </div>
+${link ? `<div class="sticky"><div><b>${brl(o.price)}</b><small>${o.discount_pct ? `${o.discount_pct}% OFF ` : ''}${naLoja(p.store)}</small></div><a class="btn red" href="${esc(link)}" rel="nofollow sponsored">Pegar promoção →</a></div>` : ''}
 ${joinBox()}
-${same.length ? `<div class="sec"><h2>Produtos da mesma categoria</h2><a href="/categoria/${cat.slug}">Ver mais</a></div><div class="grid">${same.map(card).join('')}</div>` : ''}
-${latest.length ? `<div class="sec"><h2>Últimas ofertas</h2><a href="/ofertas">Ver todas</a></div><div class="grid">${latest.map(card).join('')}</div>` : ''}
-<div class="sec"><h2>Categorias em destaque</h2><a href="/categorias">Todas</a></div>
+${same.length ? `<div class="sec"><h2>Mais ofertas de ${esc(cat.name)}</h2><a href="/categoria/${cat.slug}">Ver mais →</a></div><div class="grid">${same.map(card).join('')}</div>` : ''}
+${latest.length ? `<div class="sec"><h2>⚡ Últimas ofertas</h2><a href="/ofertas">Ver todas →</a></div><div class="grid">${latest.map(card).join('')}</div>` : ''}
+<div class="sec"><h2>Categorias</h2><a href="/categorias">Todas →</a></div>
 ${catsGrid(CATEGORIES.slice(0, 8))}`;
 
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
