@@ -1,8 +1,20 @@
 {
   "outputDirectory": "public",
   "functions": {
-    "api/hunt.js": { "maxDuration": 60 },
-    "api/mirror.js": { "maxDuration": 60 },
-    "api/add.js": { "maxDuration": 30 }
-  }
+    "api/hunt.js": {
+      "maxDuration": 60
+    },
+    "api/mirror.js": {
+      "maxDuration": 60
+    },
+    "api/add.js": {
+      "maxDuration": 30
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/p/:code",
+      "destination": "/api/p?code=:code"
+    }
+  ]
 }
