@@ -23,7 +23,7 @@
 </head>
 <body>
 <main>
-  <h1>Conectar WhatsApp (Evolution)</h1>
+  <h1 id="ttl">Conectar WhatsApp (Evolution)</h1>
 
   <div class="card" id="login" hidden>
     <div class="muted">Senha do painel</div>
@@ -59,7 +59,7 @@
 
     <div class="card">
       <b>4. Trocar</b>
-      <button id="useEvo">Usar Evolution nas ofertas</button>
+      <button id="useEvo">Usar este nas ofertas</button>
       <button class="sec" id="useZapi">Voltar para Z-API</button>
     </div>
     <div class="err" id="err"></div>
@@ -69,9 +69,11 @@
 const $ = (s) => document.querySelector(s);
 let senha = ''; try { senha = localStorage.getItem('senha') || ''; } catch {}
 let timer = null;
+const ENGINE = new URLSearchParams(location.search).get('engine') === 'go' ? 'go' : '';
+if (ENGINE) document.getElementById('ttl').textContent = 'Conectar WhatsApp (Evolution Go)';
 
 async function call(action, method = 'GET', extra = '') {
-  const r = await fetch(`/api/wa?action=${action}${extra}`, { method, headers: { 'x-senha': senha } });
+  const r = await fetch(`/api/wa?action=${action}${extra}${ENGINE ? '&engine=go' : ''}`, { method, headers: { 'x-senha': senha } });
   if (r.status === 401) { showLogin(); throw new Error('senha'); }
   const d = await r.json().catch(() => ({}));
   if (d.error) { $('#err').textContent = d.error; throw new Error(d.error); }
@@ -83,7 +85,7 @@ function paint(state, prov) {
   const open = state === 'open';
   $('#state').textContent = open ? 'conectado' : state;
   $('#state').className = 'pill ' + (open ? 'ok' : 'bad');
-  if (prov) { $('#prov').textContent = prov === 'zapi' ? 'Z-API' : 'Evolution'; $('#prov').className = 'pill' + (prov === 'evolution' ? ' ok' : ''); }
+  if (prov) { $('#prov').textContent = prov === 'zapi' ? 'Z-API' : prov === 'evogo' ? 'Evolution Go' : 'Evolution'; $('#prov').className = 'pill' + (prov !== 'zapi' ? ' ok' : ''); }
   if (open) { $('#qr').innerHTML = '<p class="muted">Chip conectado ✅</p>'; clearInterval(timer); }
 }
 async function status() { const d = await call('status'); paint(d.state, d.provider); }
@@ -108,8 +110,8 @@ $('#grpBtn').onclick = async () => {
   const cur = d.current.replace(/-group$/, '@g.us');
   $('#groups').innerHTML = d.groups.map((g) => `<li class="${g.id === cur ? 'cur' : ''}">${g.name || '(sem nome)'}${g.id === cur ? ' ← grupo atual' : ''}</li>`).join('') || '<li>Nenhum grupo</li>';
 };
-$('#testBtn').onclick = async () => { await call('test'); alert0('Teste enviado. Confira seu WhatsApp pessoal.'); };
-$('#useEvo').onclick = async () => { const d = await call('use', 'POST', '&to=evolution'); paint($('#state').textContent === 'conectado' ? 'open' : $('#state').textContent, d.provider); };
+$('#testBtn').onclick = async () => { await call(ENGINE ? 'preview-test' : 'test'); alert0('Teste enviado. Confira seu WhatsApp pessoal.'); };
+$('#useEvo').onclick = async () => { const d = await call('use', 'POST', '&to=' + (ENGINE ? 'evogo' : 'evolution')); paint($('#state').textContent === 'conectado' ? 'open' : $('#state').textContent, d.provider); };
 $('#useZapi').onclick = async () => { const d = await call('use', 'POST', '&to=zapi'); paint($('#state').textContent === 'conectado' ? 'open' : $('#state').textContent, d.provider); };
 function alert0(m) { $('#err').style.color = '#25d366'; $('#err').textContent = m; setTimeout(() => { $('#err').style.color = ''; }, 4000); }
 
