@@ -13,6 +13,34 @@
   },
   "rewrites": [
     {
+      "source": "/",
+      "destination": "/api/site?r=home"
+    },
+    {
+      "source": "/ofertas",
+      "destination": "/api/site?r=ofertas"
+    },
+    {
+      "source": "/cupons",
+      "destination": "/api/site?r=cupons"
+    },
+    {
+      "source": "/categorias",
+      "destination": "/api/site?r=categorias"
+    },
+    {
+      "source": "/categoria/:slug",
+      "destination": "/api/site?r=categoria&slug=:slug"
+    },
+    {
+      "source": "/grupos",
+      "destination": "/api/site?r=grupos"
+    },
+    {
+      "source": "/painel",
+      "destination": "/painel.html"
+    },
+    {
       "source": "/p/:code",
       "destination": "/api/p?code=:code"
     }
