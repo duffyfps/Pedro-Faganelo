@@ -10,7 +10,7 @@ import { sendDue } from '../lib/sender.js';
 import { shortAmazon } from '../lib/amazonShort.js';
 import { trackShortLink, trackLink, watch, readState, writeState } from '../lib/alerts.js';
 import { inQuietHours } from '../lib/sender.js';
-import { resolveCompetitorLink, createMlLink } from '../lib/mlLink.js';
+import { resolveCompetitorLink, createMlLink, sameProduct } from '../lib/mlLink.js';
 
 const TIME_BUDGET_MS = 45_000;
 
@@ -139,8 +139,10 @@ export default async function handler(req, res) {
           // Gera o SEU meli.la pelo gerador oficial de afiliados
           if (process.env.ML_COOKIE && (ids.item || ids.product)) {
             const ml = await createMlLink(openUrl);
-            p.url = ml.url || null; // sem link garantido: fica no painel para você colar o seu
-            out.mlLinks = [...(out.mlLinks || []), ml.url ? 'meli.la' : `sem link: ${ml.why}`];
+            // Trava: o produto do link tem que ser o mesmo do post. Se não for, NÃO manda (fica no painel).
+            const wrong = ml.url && j.info.title && ml.title && !sameProduct(j.info.title, ml.title);
+            p.url = wrong ? null : ml.url || null; // sem link garantido: fica no painel para você colar o seu
+            out.mlLinks = [...(out.mlLinks || []), wrong ? `produto diferente: "${ml.title.slice(0, 50)}"` : ml.url ? 'meli.la' : `sem link: ${ml.why}`];
             await trackLink('ml', !!ml.url, ml.why).catch(() => {});
           }
         }
