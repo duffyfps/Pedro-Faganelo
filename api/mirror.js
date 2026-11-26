@@ -169,6 +169,8 @@ export default async function handler(req, res) {
           if (shortOn && process.env.AMAZON_COOKIE) await trackShortLink(!!short.url, short.why).catch(() => {});
         }
         p.coupons = j.info.coupons;
+        p.pix = !!j.info.pix;
+        p.meliPlus = !!j.info.meliPlus;
         p.hook = j.info.hook;
         p.extras = j.info.extras;
         try {
