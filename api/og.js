@@ -6,7 +6,7 @@ export default async function handler(req, res) {
   try {
     const sharp = (await import('sharp')).default;
     const u = new URL(String(req.query.url || ''));
-    if (u.protocol !== 'https:' || !ALLOWED.test(u.hostname)) return res.status(400).end();
+    if (u.protocol !== 'https:' || !(ALLOWED.test(u.hostname) || u.hostname === String(req.headers.host || '').split(':')[0])) return res.status(400).end();
     const S = 1200;
     const [photo, logo] = await Promise.all([
       fetch(u, { signal: AbortSignal.timeout(7000) }).then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(new Error('foto')))),

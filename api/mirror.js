@@ -11,7 +11,7 @@ import { shortAmazon } from '../lib/amazonShort.js';
 import { trackShortLink, trackLink, watch, readState, writeState } from '../lib/alerts.js';
 import { inQuietHours } from '../lib/sender.js';
 import { resolveCompetitorLink, createMlLink, sameProduct } from '../lib/mlLink.js';
-import { hasWatermark, amazonImage } from '../lib/watermark.js';
+import { hasWatermark, amazonImage, cleanPhotoUrl } from '../lib/watermark.js';
 
 const TIME_BUDGET_MS = 45_000;
 
@@ -155,8 +155,14 @@ export default async function handler(req, res) {
           if (wm.wm === false) p.image = j.post.image;
           else {
             const official = p.store === 'amazon' ? p.image || (await amazonImage(j.asin)) : p.image;
-            p.image = official || null;
-            out.photos = [...(out.photos || []), `${j.post.id}: ${wm.why} → ${official ? 'foto da loja' : 'sem foto'}`];
+            // Sem foto da loja: usa a foto do post com a faixa do selo cortada (e confere de novo que o selo sumiu)
+            let cut = null;
+            if (!official && wm.wm && wm.hit) {
+              const c = cleanPhotoUrl(j.post.image, wm.hit);
+              if (c && (await hasWatermark(c)).wm === false) cut = c;
+            }
+            p.image = official || cut || null;
+            out.photos = [...(out.photos || []), `${j.post.id}: ${wm.why} → ${official ? 'foto da loja' : cut ? 'foto do post sem o selo' : 'sem foto'}`];
           }
         }
         if (p.store === 'amazon') {
