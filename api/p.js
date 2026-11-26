@@ -51,7 +51,7 @@ export default async function handler(req, res) {
     const latest = recent.filter((m) => !same.includes(m)).slice(0, 8);
 
     const store = storeName(p.store);
-    const pic = p.image ? `https://${host}/api/og?url=${encodeURIComponent(p.image)}${o.discount_pct ? `&off=${o.discount_pct}` : ''}` : '';
+    const pic = p.image ? `https://${host}/api/og?v=2&url=${encodeURIComponent(p.image)}${o.discount_pct ? `&off=${o.discount_pct}` : ''}` : '';
     const picPlain = p.image ? img(p.image) : '';
     const url = `https://${host}/p/${codeOf(o.id)}`;
     const desc = `${o.old_price && Number(o.old_price) > Number(o.price) ? `De ${brl(o.old_price)} por ` : ''}${brl(o.price)}${o.discount_pct ? ` (${o.discount_pct}% OFF)` : ''} ${naLoja(p.store)}`;
