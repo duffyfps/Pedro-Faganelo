@@ -1,6 +1,6 @@
 // Página de cada oferta (/p/<código>). As tags og:* fazem o WhatsApp mostrar a prévia (foto + nome + preço).
 import { db } from '../lib/db.js';
-import { layout, card, joinBox, catsGrid, catOf, CATEGORIES, esc, brl, img, storeName, naLoja, storeLink, ago, codeOf, idOf, SITE } from '../lib/site.js';
+import { layout, card, joinBox, catsGrid, catOf, CATEGORIES, esc, brl, img, storeName, naLoja, storeLink, dealInfo, ago, codeOf, idOf, SITE } from '../lib/site.js';
 
 const PCSS = `
 .prod{display:grid;grid-template-columns:1fr;gap:22px;background:#fff;border:1px solid var(--line);border-radius:22px;padding:16px;box-shadow:var(--shadow)}
@@ -16,6 +16,9 @@ const PCSS = `
 .pricebox .save{display:inline-block;margin-top:8px;background:#e7f7ed;color:#137a3a;font-weight:800;font-size:13px;border-radius:8px;padding:4px 9px}
 .coupon{margin-top:12px;border:2px dashed var(--gold);border-radius:14px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;gap:10px;background:#fffaea}
 .coupon span{font-size:13px;color:#6b5310}.coupon code{display:block;font-size:20px;font-weight:900;letter-spacing:1.5px;color:var(--text)}
+.coupon.plus{margin-top:6px}
+.pricebox .price small{font-size:16px;font-weight:800;color:#0b7a55;letter-spacing:0}
+.conds{list-style:none;padding:0;margin:12px 0 0;display:grid;gap:7px}.conds li{background:#f4f2ec;border-radius:12px;padding:10px 12px;font-size:14px}.conds li.pix{background:#e3f8f0}.conds li.meli{background:#fff3c4}.conds li.prime{background:#e6f1ff}
 .coupon button{background:var(--ink);border:0;color:#fff;border-radius:10px;padding:10px 14px;font-weight:800;cursor:pointer;font-family:inherit}
 .actions{display:grid;gap:10px;margin-top:16px}
 .actions .btn{width:100%;font-size:18px;padding:17px}
@@ -42,7 +45,7 @@ export default async function handler(req, res) {
     const since = new Date(Date.now() - 10 * 86400000).toISOString();
     const recent = (await db.select(
       'offers',
-      `status=eq.sent&id=neq.${id}&sent_at=gte.${since}&select=id,price,old_price,discount_pct,coupon,sent_at,products(title,image,store)&order=sent_at.desc&limit=300`
+      `status=eq.sent&id=neq.${id}&sent_at=gte.${since}&select=id,price,old_price,discount_pct,coupon,message,sent_at,products(title,image,store)&order=sent_at.desc&limit=300`
     )).filter((m) => m.products && m.products.title);
     const same = recent.filter((m) => catOf(m.products.title).slug === cat.slug).slice(0, 8);
     const latest = recent.filter((m) => !same.includes(m)).slice(0, 8);
@@ -50,8 +53,9 @@ export default async function handler(req, res) {
     const store = storeName(p.store);
     const pic = p.image ? `https://${host}${img(p.image)}` : '';
     const url = `https://${host}/p/${codeOf(o.id)}`;
-    const desc = `${o.old_price && Number(o.old_price) > Number(o.price) ? `De ${brl(o.old_price)} por ` : ''}${brl(o.price)}${o.discount_pct ? ` (${o.discount_pct}% OFF)` : ''} na ${store}`;
-    const coupons = String(o.coupon || '').split(',').map((s) => s.trim()).filter(Boolean);
+    const desc = `${o.old_price && Number(o.old_price) > Number(o.price) ? `De ${brl(o.old_price)} por ` : ''}${brl(o.price)}${o.discount_pct ? ` (${o.discount_pct}% OFF)` : ''} ${naLoja(p.store)}`;
+    const d = dealInfo(o);
+    const coupons = d.coupons;
     const saved = o.old_price && Number(o.old_price) > Number(o.price) ? Number(o.old_price) - Number(o.price) : 0;
     const share = `https://wa.me/?text=${encodeURIComponent(`${p.title}\n${desc}\n${url}`)}`;
     const when = o.sent_at || o.created_at;
@@ -75,10 +79,20 @@ ${pic ? `<meta property="og:image" content="${esc(pic)}"><meta property="og:imag
     <h1>${esc(p.title)}</h1>
     <div class="pricebox">
       ${saved ? `<div class="old">De ${brl(o.old_price)}</div>` : ''}
-      <div class="price">${brl(o.price)}</div>
+      <div class="price">${brl(o.price)}${d.pix ? '<small> no Pix</small>' : ''}</div>
       ${saved ? `<span class="save">Você economiza ${brl(saved)}${o.discount_pct ? ` · ${o.discount_pct}% OFF` : ''}</span>` : ''}
     </div>
-    ${coupons.map((c) => `<div class="coupon"><span>Use o cupom no carrinho<code>${esc(c)}</code></span><button onclick="navigator.clipboard.writeText('${esc(c)}');this.textContent='Copiado ✓'">Copiar cupom</button></div>`).join('')}
+    ${coupons.map((g, i) => {
+      const codes = g.split(' + ');
+      const label = codes.length > 1 ? 'Use os cupons juntos no carrinho' : i > 0 ? 'Ou use o cupom' : 'Use o cupom no carrinho';
+      return codes.map((c, k) => `<div class="coupon${k ? ' plus' : ''}"><span>${k ? '+ junto com' : label}<code>${esc(c)}</code></span><button onclick="navigator.clipboard.writeText('${esc(c)}');this.textContent='Copiado ✓'">Copiar</button></div>`).join('');
+    }).join('')}
+    ${d.pix || d.meliPlus || d.prime || d.checkout ? `<ul class="conds">
+      ${d.pix ? '<li class="pix">💠 <b>Preço pagando no Pix</b> — selecione <b>Pix</b> na hora de pagar</li>' : ''}
+      ${d.meliPlus ? '<li class="meli">⭐ <b>Exclusivo para assinantes Meli+</b></li>' : ''}
+      ${d.prime ? '<li class="prime">👑 <b>Oferta exclusiva para membros Prime</b></li>' : ''}
+      ${d.checkout ? '<li>💡 O desconto aparece na <b>finalização da compra</b></li>' : ''}
+    </ul>` : ''}
     <div class="actions">
       ${link ? `<a class="btn red" href="${esc(link)}" rel="nofollow sponsored">Pegar promoção ${naLoja(p.store)} →</a>` : ''}
       <a class="btn line" href="${esc(share)}">📲 Mandar pra alguém no WhatsApp</a>
@@ -91,7 +105,7 @@ ${pic ? `<meta property="og:image" content="${esc(pic)}"><meta property="og:imag
     <div class="note">#publicidade · Como afiliados, podemos receber comissão sem custo extra para você.</div>
   </div>
 </div>
-${link ? `<div class="sticky"><div><b>${brl(o.price)}</b><small>${o.discount_pct ? `${o.discount_pct}% OFF ` : ''}${naLoja(p.store)}</small></div><a class="btn red" href="${esc(link)}" rel="nofollow sponsored">Pegar promoção →</a></div>` : ''}
+${link ? `<div class="sticky"><div><b>${brl(o.price)}</b><small>${d.pix ? 'no Pix · ' : ''}${o.discount_pct ? `${o.discount_pct}% OFF ` : ''}${naLoja(p.store)}</small></div><a class="btn red" href="${esc(link)}" rel="nofollow sponsored">Pegar promoção →</a></div>` : ''}
 ${joinBox()}
 ${same.length ? `<div class="sec"><h2>Mais ofertas de ${esc(cat.name)}</h2><a href="/categoria/${cat.slug}">Ver mais →</a></div><div class="grid">${same.map(card).join('')}</div>` : ''}
 ${latest.length ? `<div class="sec"><h2>⚡ Últimas ofertas</h2><a href="/ofertas">Ver todas →</a></div><div class="grid">${latest.map(card).join('')}</div>` : ''}

@@ -1,6 +1,6 @@
 // Site público: início, ofertas, cupons, categorias, uma categoria e grupos
 import { db } from '../lib/db.js';
-import { layout, card, joinBox, trustRow, catsGrid, catOf, catBySlug, CATEGORIES, esc, GROUP, SITE, hat } from '../lib/site.js';
+import { layout, card, joinBox, trustRow, catsGrid, catOf, catBySlug, CATEGORIES, esc, GROUP, SITE, hatImg } from '../lib/site.js';
 
 const PER_PAGE = 24;
 
@@ -8,7 +8,7 @@ async function recent(limit = 500) {
   const since = new Date(Date.now() - 10 * 86400000).toISOString();
   const rows = await db.select(
     'offers',
-    `status=eq.sent&sent_at=gte.${since}&select=id,price,old_price,discount_pct,coupon,sent_at,products(title,image,store)&order=sent_at.desc&limit=${limit}`
+    `status=eq.sent&sent_at=gte.${since}&select=id,price,old_price,discount_pct,coupon,message,sent_at,products(title,image,store)&order=sent_at.desc&limit=${limit}`
   );
   return rows.filter((o) => o.products && o.products.title);
 }
@@ -49,7 +49,7 @@ export default async function handler(req, res) {
         host,
         body: `
 <section class="hero">
-  <span class="bighat">${hat(320, '#d4af55', '#e0262f')}</span>
+  ${hatImg(330, 'bighat')}
   <span class="kick"><i></i> Atualizado ${all[0] ? `${Math.max(1, Math.round((Date.now() - new Date(all[0].sent_at)) / 60000))} min atrás` : 'o dia todo'}</span>
   <h1>Pague pouco.<br>Compre como um <em>magnata</em>.</h1>
   <p>Caçamos as melhores ofertas e cupons da Amazon e do Mercado Livre o dia todo e só mostramos o que vale a pena.</p>
@@ -160,7 +160,7 @@ ${joinBox()}`,
         host,
         body: `
 <div class="crumbs"><a href="/">Início</a> / Grupos</div>
-<section class="hero"><span class="bighat">${hat(320, '#d4af55', '#e0262f')}</span><span class="kick"><i></i> Grupo VIP gratuito</span><h1>As ofertas de magnata <em>no seu WhatsApp</em></h1>
+<section class="hero">${hatImg(330, 'bighat')}<span class="kick"><i></i> Grupo VIP gratuito</span><h1>As ofertas de magnata <em>no seu WhatsApp</em></h1>
 <p>Entre no grupo e receba as melhores promoções da Amazon e do Mercado Livre assim que elas aparecem. É grátis e você pode sair quando quiser.</p>
 ${GROUP() ? `<a class="btn wa" href="${esc(GROUP())}" rel="nofollow">Entrar no grupo do WhatsApp</a>` : '<p class="sub">Link do grupo em breve.</p>'}
 </section>
