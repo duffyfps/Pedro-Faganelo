@@ -32,6 +32,16 @@ export default async function handler(req, res) {
     if (action === 'preview-test') {
       // Última oferta enviada de cada loja, mandada no SEU privado no formato prévia clicável
       const out = {};
+      const n = Math.min(10, Number(req.query.n) || 0);
+      if (n) {
+        // As N últimas ofertas enviadas (qualquer loja), da mais antiga para a mais nova
+        const list = (await db.select('offers', `status=eq.sent&select=*,products(image,title,store)&order=sent_at.desc&limit=${n}`)).reverse();
+        for (const [i, o] of list.entries()) {
+          out[i + 1] = isGo ? await goAdmin.previewTest({ text: o.message, link: linkOf(o) }) : await evoAdmin.previewTest(o.message);
+          await new Promise((r) => setTimeout(r, 300));
+        }
+        return res.status(200).json(out);
+      }
       for (const pre of ['amz', 'ml']) {
         const [o] = await db.select('offers', `status=eq.sent&product_id=like.${pre}:*&select=*,products(image,title,store)&order=sent_at.desc&limit=1`);
         if (!o) continue;
