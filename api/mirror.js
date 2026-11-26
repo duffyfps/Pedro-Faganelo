@@ -171,6 +171,8 @@ export default async function handler(req, res) {
         p.coupons = j.info.coupons;
         p.pix = !!j.info.pix;
         p.meliPlus = !!j.info.meliPlus;
+        p.prime = !!j.info.prime;
+        p.checkout = !!j.info.checkout;
         p.hook = j.info.hook;
         p.extras = j.info.extras;
         try {
