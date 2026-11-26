@@ -37,7 +37,14 @@ export default async function handler(req, res) {
         // As N últimas ofertas enviadas (qualquer loja), da mais antiga para a mais nova
         const list = (await db.select('offers', `status=eq.sent&select=*,products(image,title,store)&order=sent_at.desc&limit=${n}`)).reverse();
         for (const [i, o] of list.entries()) {
-          out[i + 1] = isGo ? await goAdmin.previewTest({ text: o.message, link: linkOf(o) }) : await evoAdmin.previewTest(o.message);
+          const L = linkOf(o);
+          if (isGo) out[i + 1] = await goAdmin.previewTest({ text: o.message, link: L });
+          else if (req.query.site) {
+            // Evolution API (Baileys): texto com o link da página do site, para a prévia grande
+            const r = await evoAdmin.raw(o.message.split(L.url).join(L.page));
+            const m = r?.message?.extendedTextMessage || {};
+            out[i + 1] = { keys: Object.keys(m), hq: !!m.thumbnailDirectPath, w: m.thumbnailWidth || null, h: m.thumbnailHeight || null };
+          } else out[i + 1] = await evoAdmin.previewTest(o.message);
           await new Promise((r) => setTimeout(r, 300));
         }
         return res.status(200).json(out);
