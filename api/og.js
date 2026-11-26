@@ -12,21 +12,17 @@ export default async function handler(req, res) {
       fetch(u, { signal: AbortSignal.timeout(7000) }).then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(new Error('foto')))),
       fetch(`https://${req.headers.host}/logo-marca.webp`, { signal: AbortSignal.timeout(5000) }).then((r) => (r.ok ? r.arrayBuffer() : null)).catch(() => null),
     ]);
-    // Fundo: a própria foto ampliada e desfocada (preenche tudo, sem bordas).
-    // Frente: a foto inteira, centralizada, sem cortar nada do produto.
-    const src = sharp(Buffer.from(photo)).flatten({ background: '#ffffff' });
-    const bg = await src.clone().resize(S, S, { fit: 'cover' }).blur(40).modulate({ brightness: 0.92 }).toBuffer();
-    const front = await src.clone().resize(1080, 1080, { fit: 'inside' }).toBuffer();
-    const fm = await sharp(front).metadata();
-    const pic = await sharp(bg).composite([{ input: front, left: Math.round((S - fm.width) / 2), top: Math.round((S - fm.height) / 2) }]).toBuffer();
+    // A foto exatamente como ela é: no formato original, sem cortar e sem preencher nada.
+    const pic = await sharp(Buffer.from(photo)).flatten({ background: '#ffffff' }).resize(S, S, { fit: 'inside', withoutEnlargement: false }).toBuffer();
+    const pm = await sharp(pic).metadata();
     const layers = [];
     if (logo) {
       // Logo com fundo transparente no canto de baixo, com uma sombra leve para destacar em qualquer foto
-      const lg = await sharp(Buffer.from(logo)).resize({ width: 340 }).toBuffer();
+      const lg = await sharp(Buffer.from(logo)).resize({ width: Math.round(Math.min(pm.width, pm.height) * 0.3) }).toBuffer();
       const meta = await sharp(lg).metadata();
       const shadow = await sharp(lg).ensureAlpha().extractChannel('alpha').blur(14).linear(0.55, 0).toColourspace('b-w').toBuffer();
       const sh = await sharp({ create: { width: meta.width, height: meta.height, channels: 3, background: '#000000' } }).joinChannel(shadow).png().toBuffer();
-      const left = 20, top = S - meta.height - 18;
+      const left = Math.round(pm.width * 0.02), top = pm.height - meta.height - 18;
       layers.push({ input: sh, left: left + 4, top: top + 8 }, { input: lg, left, top });
     }
     const out = await sharp(pic).composite(layers).jpeg({ quality: 82, mozjpeg: true }).toBuffer();

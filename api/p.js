@@ -51,7 +51,7 @@ export default async function handler(req, res) {
     const latest = recent.filter((m) => !same.includes(m)).slice(0, 8);
 
     const store = storeName(p.store);
-    const pic = p.image ? `https://${host}/api/og?v=3&url=${encodeURIComponent(p.image)}${o.discount_pct ? `&off=${o.discount_pct}` : ''}` : '';
+    const pic = p.image ? `https://${host}/api/og?v=4&url=${encodeURIComponent(p.image)}${o.discount_pct ? `&off=${o.discount_pct}` : ''}` : '';
     const picPlain = p.image ? img(p.image) : '';
     const url = `https://${host}/p/${codeOf(o.id)}`;
     const desc = `${o.old_price && Number(o.old_price) > Number(o.price) ? `De ${brl(o.old_price)} por ` : ''}${brl(o.price)}${o.discount_pct ? ` (${o.discount_pct}% OFF)` : ''} ${naLoja(p.store)}`;
@@ -67,7 +67,7 @@ export default async function handler(req, res) {
 <meta property="og:title" content="${esc(p.title)}">
 <meta property="og:description" content="${esc(desc)}">
 <meta property="og:url" content="${esc(url)}">
-${pic ? `<meta property="og:image" content="${esc(pic)}"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="1200"><meta property="og:image:type" content="image/jpeg"><meta property="og:image:alt" content="${esc(p.title)}"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="${esc(pic)}">` : ''}
+${pic ? `<meta property="og:image" content="${esc(pic)}"><meta property="og:image:type" content="image/jpeg"><meta property="og:image:alt" content="${esc(p.title)}"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="${esc(pic)}">` : ''}
 <meta property="product:price:amount" content="${esc(o.price)}"><meta property="product:price:currency" content="BRL">
 <style>${PCSS}</style>`;
 
