@@ -11,6 +11,7 @@ import { shortAmazon } from '../lib/amazonShort.js';
 import { trackShortLink, trackLink, watch, readState, writeState } from '../lib/alerts.js';
 import { inQuietHours } from '../lib/sender.js';
 import { resolveCompetitorLink, createMlLink, sameProduct } from '../lib/mlLink.js';
+import { hasWatermark, amazonImage } from '../lib/watermark.js';
 
 const TIME_BUDGET_MS = 45_000;
 
@@ -141,12 +142,23 @@ export default async function handler(req, res) {
             const ml = await createMlLink(openUrl);
             // Trava: o produto do link tem que ser o mesmo do post. Se não for, NÃO manda (fica no painel).
             const wrong = ml.url && j.info.title && ml.title && !sameProduct(j.info.title, ml.title);
-            p.url = wrong ? null : ml.url || null; // sem link garantido: fica no painel para você colar o seu
+            p.url = wrong ? null : ml.url || null;
+            if (!wrong && ml.image && !p.image) p.image = ml.image; // foto oficial do anúncio (reserva) // sem link garantido: fica no painel para você colar o seu
             out.mlLinks = [...(out.mlLinks || []), wrong ? `produto diferente: "${ml.title.slice(0, 50)}"` : ml.url ? 'meli.la' : `sem link: ${ml.why}`];
             await trackLink('ml', !!ml.url, ml.why).catch(() => {});
           }
         }
-        if (j.post.image) p.image = j.post.image; // mesma foto do post original
+        // Mesma foto do post — MAS só se não tiver selo de outro canal (ex.: @xetdaspromocoes).
+        // Com selo (ou se não der para conferir), usa a foto oficial da loja; sem ela, vai só o texto.
+        if (j.post.image) {
+          const wm = await hasWatermark(j.post.image);
+          if (wm.wm === false) p.image = j.post.image;
+          else {
+            const official = p.store === 'amazon' ? p.image || (await amazonImage(j.asin)) : p.image;
+            p.image = official || null;
+            out.photos = [...(out.photos || []), `${j.post.id}: ${wm.why} → ${official ? 'foto da loja' : 'sem foto'}`];
+          }
+        }
         if (p.store === 'amazon') {
           // Link curto (link.amazon) só quando ligado no banco: state amazon_short = 'on'
           const shortOn = (await readState('amazon_short')) === 'on';
