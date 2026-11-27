@@ -5,7 +5,7 @@ import { requirePassword } from '../lib/auth.js';
 import { db } from '../lib/db.js';
 import { keepPhoto, needsCopy } from '../lib/photoStore.js';
 import { hasWatermark, cleanPhotoUrl, amazonImage } from '../lib/watermark.js';
-import { mlLinkStatus } from '../lib/mlLink.js';
+import { mlLinkStatus, mlLinkImage } from '../lib/mlLink.js';
 
 async function postPhoto(source) {
   const r = await fetch(`https://t.me/${source}?embed=1&mode=tme`, { signal: AbortSignal.timeout(7000) });
@@ -20,7 +20,7 @@ export default async function handler(req, res) {
   if (req.query.check) { const debug = []; const st = await mlLinkStatus(String(req.query.check), debug); return res.status(200).json({ status: st, debug }); }
   const limit = Math.min(30, Number(req.query.limit) || 15);
   const t0 = Date.now();
-  const rows = await db.select('products', `or=(image.like.*telesco.pe*,image.like.*api/img*,image.is.null)&select=id,store,image&order=updated_at.desc&limit=${limit}&offset=${Number(req.query.offset) || 0}`);
+  const rows = await db.select('products', `or=(image.like.*telesco.pe*,image.like.*api/img*,image.is.null)&select=*&order=updated_at.desc&limit=${limit}&offset=${Number(req.query.offset) || 0}`);
   const out = [];
   for (const p of rows) {
     if (Date.now() - t0 > 50000) { out.push({ id: p.id, r: 'sem tempo' }); continue; }
@@ -41,6 +41,13 @@ export default async function handler(req, res) {
           }
         }
       }
+      // 3) Mercado Livre: foto do anúncio pelo link meli.la (do produto ou da mensagem)
+      if (!img && p.store === 'ml') {
+        const [o2] = await db.select('offers', `product_id=eq.${encodeURIComponent(p.id)}&select=message&order=created_at.desc&limit=1`);
+        const link = [p.url, p.open_url, ...(String(o2?.message || '').match(/https:\/\/meli\.la\/\S+/g) || [])].find((u) => /^https:\/\/meli\.la\//.test(String(u || '')));
+        img = await mlLinkImage(link);
+        why = img ? 'meli.la' : '';
+      }
       if (!img) { out.push({ id: p.id, r: 'não achei foto limpa' }); continue; }
       const kept = await keepPhoto(img, `${p.id}_fix`);
       if (needsCopy(kept)) { out.push({ id: p.id, r: 'falhou ao guardar' }); continue; }
@@ -50,5 +57,5 @@ export default async function handler(req, res) {
       out.push({ id: p.id, r: `erro ${String(e.message).slice(0, 50)}` });
     }
   }
-  res.status(200).json({ total: rows.length, ok: out.filter((x) => ['amazon', 'post', 'post sem selo'].includes(x.r)).length, out });
+  res.status(200).json({ total: rows.length, ok: out.filter((x) => ['amazon', 'post', 'post sem selo', 'meli.la'].includes(x.r)).length, out });
 }

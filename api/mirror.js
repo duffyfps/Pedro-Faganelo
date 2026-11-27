@@ -10,7 +10,7 @@ import { sendDue } from '../lib/sender.js';
 import { shortAmazon } from '../lib/amazonShort.js';
 import { trackShortLink, trackLink, watch, readState, writeState } from '../lib/alerts.js';
 import { inQuietHours } from '../lib/sender.js';
-import { resolveCompetitorLink, createMlLink, sameProduct } from '../lib/mlLink.js';
+import { resolveCompetitorLink, createMlLink, sameProduct, mlLinkImage } from '../lib/mlLink.js';
 import { hasWatermark, amazonImage, cleanPhotoUrl } from '../lib/watermark.js';
 import { keepPhoto } from '../lib/photoStore.js';
 import { isCleanPhoto, pickCleanPhoto } from '../lib/cleanPhoto.js';
@@ -171,6 +171,11 @@ export default async function handler(req, res) {
             p.image = official || cut || null;
             out.photos = [...(out.photos || []), `${j.post.id}: ${wm.why} → ${official ? 'foto da loja' : cut ? 'foto do post sem o selo' : 'sem foto'}`];
           }
+        }
+        // Post sem foto: usa uma foto do anúncio (fotos do produto, página da oferta ou o link meli.la do post)
+        if (!p.image && p.store === 'ml') {
+          const alt = j.mlImages?.[0] || j.post.altImage || (await mlLinkImage(j.chain.find((u) => /^https:\/\/meli\.la\//.test(u)) || j.post.links?.find((u) => /^https:\/\/meli\.la\//.test(u))));
+          if (alt) { p.image = alt; out.photos = [...(out.photos || []), `${j.post.id}: sem foto → foto do anúncio`]; }
         }
         // Foto com banner/texto (ex.: "O ÚNICO GIGANTE NO TAMANHO"): troca por uma do anúncio só com o produto no fundo branco
         if (p.image && p.store === 'ml') {

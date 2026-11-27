@@ -1,7 +1,7 @@
 // Página de cada oferta (/p/<código>). As tags og:* fazem o WhatsApp mostrar a prévia (foto + nome + preço).
 import { db } from '../lib/db.js';
 import { related } from '../lib/related.js';
-import { layout, card, joinBox, catsGrid, catOf, CATEGORIES, esc, brl, img, storeName, naLoja, storeLink, dealInfo, ago, codeOf, idOf, SITE } from '../lib/site.js';
+import { layout, card, joinBox, catsGrid, catOf, CATEGORIES, esc, brl, img, storeName, naLoja, storeLink, dealInfo, ago, codeOf, idOf, SITE, brand } from '../lib/site.js';
 
 const PCSS = `
 .prod{display:grid;grid-template-columns:1fr;gap:22px;background:#fff;border:1px solid var(--line);border-radius:22px;padding:16px;box-shadow:var(--shadow)}
@@ -76,7 +76,7 @@ ${pic ? `<meta property="og:image" content="${esc(pic)}"><meta property="og:imag
     const body = `
 <div class="crumbs"><a href="/">Início</a> / <a href="/ofertas?loja=${p.store === 'amazon' ? 'amazon' : 'ml'}">${store}</a> / <a href="/categoria/${cat.slug}">${esc(cat.name)}</a></div>
 <div class="prod">
-  <div class="pic">${pic ? `<img src="${esc(picPlain)}" alt="${esc(p.title)}">` : ''}${o.discount_pct ? `<span class="badge">-${o.discount_pct}%</span>` : ''}</div>
+  <div class="pic">${pic ? `<img src="${esc(picPlain)}" alt="${esc(p.title)}" onerror="this.onerror=null;this.src='${brand().icon}'">` : `<img src="${brand().icon}" alt="${esc(p.title)}" style="object-fit:contain;padding:40px">`}${o.discount_pct ? `<span class="badge">-${o.discount_pct}%</span>` : ''}</div>
   <div>
     <div class="meta"><span class="store ${p.store === 'amazon' ? 'amazon' : 'ml'}">${store}</span><span>Publicada ${ago(when)}</span></div>
     <h1>${esc(p.title)}</h1>
