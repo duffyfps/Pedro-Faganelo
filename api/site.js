@@ -1,7 +1,7 @@
 // Site público: início, ofertas, cupons, categorias, uma categoria e grupos
 import { db } from '../lib/db.js';
 import { profile } from '../lib/related.js';
-import { layout, card, joinBox, trustRow, catsGrid, catOf, catBySlug, CATEGORIES, esc, GROUP, SITE, hatImg } from '../lib/site.js';
+import { layout, card, joinBox, trustRow, catsGrid, catOf, catBySlug, CATEGORIES, esc, GROUP, SITE, hatImg, brand } from '../lib/site.js';
 
 const PER_PAGE = 24;
 
@@ -64,8 +64,8 @@ export default async function handler(req, res) {
 <section class="hero">
   ${hatImg(330, 'bighat')}
   <span class="kick"><i></i> Atualizado ${all[0] ? `${Math.max(1, Math.round((Date.now() - new Date(all[0].sent_at)) / 60000))} min atrás` : 'o dia todo'}</span>
-  <h1>Pague pouco.<br>Compre como um <em>magnata</em>.</h1>
-  <p>Caçamos as melhores ofertas e cupons da Amazon e do Mercado Livre o dia todo e só mostramos o que vale a pena.</p>
+  <h1>${brand().heroH1}</h1>
+  <p>${brand().heroP}</p>
   <div class="cta">
     <a class="btn red" href="/ofertas">Ver ofertas de hoje</a>
     ${GROUP() ? `<a class="btn ghost" href="${esc(GROUP())}" rel="nofollow">Receber no WhatsApp</a>` : ''}
@@ -80,7 +80,7 @@ export default async function handler(req, res) {
 <div class="chips">${hot.slice(0, 12).map((c) => `<a class="chip" href="/categoria/${c.slug}">${c.icon} ${esc(c.name)}</a>`).join('')}</div>
 <div class="sec"><h2>⚡ Acabaram de sair<small>As promoções mais recentes, direto do forno</small></h2><a href="/ofertas">Ver todas →</a></div>
 ${grid(all.slice(0, 15))}
-${top.length ? `<div class="sec"><h2>💸 Descontos de magnata<small>40% OFF ou mais</small></h2><a href="/ofertas?ordem=desconto">Ver mais →</a></div>${grid(top)}` : ''}
+${top.length ? `<div class="sec"><h2>💸 ${brand().topDeals}<small>40% OFF ou mais</small></h2><a href="/ofertas?ordem=desconto">Ver mais →</a></div>${grid(top)}` : ''}
 ${joinBox()}
 ${withCoupon.length ? `<div class="sec"><h2>🎟️ Com cupom<small>Fica ainda mais barato no carrinho</small></h2><a href="/cupons">Ver cupons →</a></div>${grid(withCoupon)}` : ''}
 ${cheap.length ? `<div class="sec"><h2>🏷️ Até R$ 50<small>Achadinhos que cabem no bolso</small></h2><a href="/ofertas?ate=50">Ver mais →</a></div>${grid(cheap)}` : ''}
@@ -173,7 +173,7 @@ ${joinBox()}`,
         host,
         body: `
 <div class="crumbs"><a href="/">Início</a> / Grupos</div>
-<section class="hero">${hatImg(330, 'bighat')}<span class="kick"><i></i> Grupo VIP gratuito</span><h1>As ofertas de magnata <em>no seu WhatsApp</em></h1>
+<section class="hero">${hatImg(330, 'bighat')}<span class="kick"><i></i> Grupo VIP gratuito</span><h1>${brand().groupsH1}</h1>
 <p>Entre no grupo e receba as melhores promoções da Amazon e do Mercado Livre assim que elas aparecem. É grátis e você pode sair quando quiser.</p>
 ${GROUP() ? `<a class="btn wa" href="${esc(GROUP())}" rel="nofollow">Entrar no grupo do WhatsApp</a>` : '<p class="sub">Link do grupo em breve.</p>'}
 </section>

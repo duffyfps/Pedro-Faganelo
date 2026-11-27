@@ -1,5 +1,6 @@
 // Imagem da prévia (og:image) com a marca: foto do produto ocupando tudo + logo do Magnata (PNG transparente).
 // Uso: /api/og?url=<foto do produto>   → JPEG 1200x1200 (prévia grande no WhatsApp)
+import { brand } from '../lib/brand.js';
 const ALLOWED = /(^|\.)(media-amazon\.com|ssl-images-amazon\.com|mlstatic\.com|telesco\.pe|supabase\.co)$/i;
 
 export default async function handler(req, res) {
@@ -10,7 +11,7 @@ export default async function handler(req, res) {
     const S = 1200;
     const [photo, logo] = await Promise.all([
       fetch(u, { signal: AbortSignal.timeout(7000) }).then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(new Error('foto')))),
-      fetch(`https://${req.headers.host}/logo-marca.webp`, { signal: AbortSignal.timeout(5000) }).then((r) => (r.ok ? r.arrayBuffer() : null)).catch(() => null),
+      fetch(`https://${req.headers.host}${brand().mark}`, { signal: AbortSignal.timeout(5000) }).then((r) => (r.ok ? r.arrayBuffer() : null)).catch(() => null),
     ]);
     // A foto exatamente como ela é: no formato original, sem cortar e sem preencher nada.
     const pic = await sharp(Buffer.from(photo)).flatten({ background: '#ffffff' }).resize(S, S, { fit: 'inside', withoutEnlargement: false }).toBuffer();
