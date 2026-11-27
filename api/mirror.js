@@ -172,6 +172,11 @@ export default async function handler(req, res) {
             out.photos = [...(out.photos || []), `${j.post.id}: ${wm.why} → ${official ? 'foto da loja' : cut ? 'foto do post sem o selo' : 'sem foto'}`];
           }
         }
+        // Amazon sem foto (post só com texto, ou foto com selo sem foto oficial): foto oficial pelo ASIN / página do produto
+        if (!p.image && p.store === 'amazon') {
+          p.image = await amazonImage(j.asin);
+          out.photos = [...(out.photos || []), `${j.post.id}: Amazon sem foto → ${p.image ? 'foto da loja' : 'sem foto'}`];
+        }
         // Post sem foto: usa uma foto do anúncio (fotos do produto, página da oferta ou o link meli.la do post)
         if (!p.image && p.store === 'ml') {
           const alt = j.mlImages?.[0] || j.post.altImage || (await mlLinkImage(j.chain.find((u) => /^https:\/\/meli\.la\//.test(u)) || j.post.links?.find((u) => /^https:\/\/meli\.la\//.test(u))));
