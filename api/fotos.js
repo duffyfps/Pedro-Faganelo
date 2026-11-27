@@ -26,6 +26,12 @@ export default async function handler(req, res) {
     for (const p of list) {
       if (Date.now() - t1 > 50000) { out.push({ id: p.id, r: 'sem tempo' }); continue; }
       const cur = String(p.image || '');
+      // Foto da loja em miniatura (250/500px): troca pela versão grande (1000px)
+      if (/^https:\/\/http2\.mlstatic\.com\/D_.+-[A-EG-Z]\.(webp|jpe?g|png)$/.test(cur)) {
+        await db.update('products', `id=eq.${encodeURIComponent(p.id)}`, { image: cur.replace(/-[A-Z]\.(webp|jpe?g|png)$/, '-F.$1') });
+        out.push({ id: p.id, r: 'trocada' });
+        continue;
+      }
       if (/mlstatic\.com|media-amazon\.com|\/fotos\/(crop_|.*_fix)/.test(cur)) { out.push({ id: p.id, r: 'já é da loja' }); continue; }
       try {
         let img = null;
