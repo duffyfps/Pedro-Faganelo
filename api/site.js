@@ -1,6 +1,8 @@
 // Site público: início, ofertas, cupons, categorias, uma categoria e grupos
 import { db } from '../lib/db.js';
 import { profile } from '../lib/related.js';
+import { saveEvents, stats } from '../lib/analytics.js';
+import { requirePassword } from '../lib/auth.js';
 import { layout, card, joinBox, trustRow, catsGrid, catOf, catBySlug, CATEGORIES, esc, GROUP, SITE, hatImg, brand } from '../lib/site.js';
 
 const PER_PAGE = 24;
@@ -36,6 +38,27 @@ const grid = (list) => (list.length ? `<div class="grid">${list.map(card).join('
 
 export default async function handler(req, res) {
   const r = String(req.query.r || 'home');
+  // Métricas: eventos do navegador (/ev) e resumo para o painel /analytics
+  if (r === 'ev') {
+    try { await saveEvents(req); } catch {}
+    return res.status(204).end();
+  }
+  if (r === 'stats') {
+    const origin = String(req.headers.origin || '');
+    if (/^https:\/\/(www\.)?(magnatapromocoes\.com\.br|ofertas-pedro\.vercel\.app|baratinho-diario\.vercel\.app)$/.test(origin)) {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+      res.setHeader('Access-Control-Allow-Headers', 'x-senha');
+      res.setHeader('Vary', 'Origin');
+    }
+    if (req.method === 'OPTIONS') return res.status(204).end();
+    if (!requirePassword(req, res)) return;
+    try {
+      res.setHeader('Cache-Control', 'no-store');
+      return res.status(200).json(await stats(req.query.days));
+    } catch (e) {
+      return res.status(500).json({ error: String(e.message).slice(0, 300) });
+    }
+  }
   const page = Math.max(1, Number(req.query.pagina) || 1);
   const host = req.headers['x-forwarded-host'] || req.headers.host;
   try {
