@@ -24,7 +24,8 @@ export default async function handler(req, res) {
       const shadow = await sharp(lg).ensureAlpha().extractChannel('alpha').blur(14).linear(0.55, 0).toColourspace('b-w').toBuffer();
       const sh = await sharp({ create: { width: meta.width, height: meta.height, channels: 3, background: '#000000' } }).joinChannel(shadow).png().toBuffer();
       const left = Math.round(pm.width * 0.02), top = pm.height - meta.height - 18;
-      layers.push({ input: sh, left: left + 4, top: top + 8 }, { input: lg, left, top });
+      if (brand().markShadow !== false) layers.push({ input: sh, left: left + 4, top: top + 8 });
+      layers.push({ input: lg, left, top });
     }
     const out = await sharp(pic).composite(layers).jpeg({ quality: 82, mozjpeg: true }).toBuffer();
     res.setHeader('Content-Type', 'image/jpeg');
