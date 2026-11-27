@@ -37,6 +37,10 @@
       "destination": "/api/site?r=grupos"
     },
     {
+      "source": "/grupo-feminino",
+      "destination": "/api/site?r=feminino"
+    },
+    {
       "source": "/painel",
       "destination": "/painel.html"
     },
