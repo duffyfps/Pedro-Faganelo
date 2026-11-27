@@ -6,8 +6,8 @@ import { layout, card, joinBox, catsGrid, catOf, CATEGORIES, esc, brl, img, stor
 const PCSS = `
 .prod{display:grid;grid-template-columns:1fr;gap:22px;background:#fff;border:1px solid var(--line);border-radius:22px;padding:16px;box-shadow:var(--shadow)}
 @media(min-width:860px){.prod{grid-template-columns:460px 1fr;padding:26px;gap:34px}}
-.prod .pic{background:#fff;border:1px solid #f0ede6;border-radius:16px;aspect-ratio:1/1;display:grid;place-items:center;overflow:hidden;position:relative;padding:18px}
-.prod .pic img{max-width:100%;max-height:100%;object-fit:contain}
+.prod .pic{background:#fff;border:1px solid #f0ede6;border-radius:16px;aspect-ratio:1/1;overflow:hidden;position:relative}
+.prod .pic img{position:absolute;top:18px;left:18px;width:calc(100% - 36px);height:calc(100% - 36px);object-fit:contain}
 .prod .badge{position:absolute;top:14px;left:14px;background:var(--red);color:#fff;font-weight:900;font-size:18px;border-radius:10px;padding:5px 11px;box-shadow:0 6px 16px rgba(224,38,47,.35)}
 .prod .meta{font-size:12px;color:var(--muted);display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .prod h1{font-size:23px;margin:12px 0 16px;line-height:1.3;letter-spacing:-.2px}
@@ -53,7 +53,7 @@ export default async function handler(req, res) {
     const latest = recent.filter((m) => !same.includes(m)).slice(0, 8);
 
     const store = storeName(p.store);
-    const pic = p.image ? `https://${host}/api/og?v=6&url=${encodeURIComponent(p.image)}${o.discount_pct ? `&off=${o.discount_pct}` : ''}` : '';
+    const pic = p.image ? `https://${host}/api/og?v=7&url=${encodeURIComponent(p.image)}${o.discount_pct ? `&off=${o.discount_pct}` : ''}` : '';
     const picPlain = p.image ? img(p.image) : '';
     const url = `https://${host}/p/${codeOf(o.id)}`;
     const desc = `${o.old_price && Number(o.old_price) > Number(o.price) ? `De ${brl(o.old_price)} por ` : ''}${brl(o.price)}${o.discount_pct ? ` (${o.discount_pct}% OFF)` : ''} ${naLoja(p.store)}`;

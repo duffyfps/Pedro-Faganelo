@@ -13,8 +13,21 @@ export default async function handler(req, res) {
       fetch(u, { signal: AbortSignal.timeout(7000) }).then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(new Error('foto')))),
       fetch(`https://${req.headers.host}${brand().mark}`, { signal: AbortSignal.timeout(5000) }).then((r) => (r.ok ? r.arrayBuffer() : null)).catch(() => null),
     ]);
-    // A foto exatamente como ela é: no formato original, sem cortar e sem preencher nada.
-    const pic = await sharp(Buffer.from(photo)).flatten({ background: '#ffffff' }).resize(S, S, { fit: 'inside', withoutEnlargement: false }).toBuffer();
+    // Prévia sempre QUADRADA com o produto inteiro e centralizado no fundo branco (o WhatsApp corta fotos
+    // compridas: produto alto ou largo perdia o topo/os lados). Tira a borda branca e deixa uma margem igual em volta.
+    const flat = await sharp(Buffer.from(photo)).flatten({ background: '#ffffff' }).toBuffer();
+    let core = flat;
+    try {
+      const t = await sharp(flat).trim({ background: '#ffffff', threshold: 18 }).toBuffer();
+      const tm = await sharp(t).metadata();
+      if (tm.width > 40 && tm.height > 40) core = t;
+    } catch {}
+    const M = Math.round(S * 0.07), inner = S - 2 * M;
+    const fit = await sharp(core).resize(inner, inner, { fit: 'inside' }).toBuffer();
+    const fm = await sharp(fit).metadata();
+    const pic = await sharp({ create: { width: S, height: S, channels: 3, background: '#ffffff' } })
+      .composite([{ input: fit, left: Math.round((S - fm.width) / 2), top: Math.round((S - fm.height) / 2) }])
+      .png().toBuffer();
     const pm = await sharp(pic).metadata();
     const layers = [];
     if (logo) {
