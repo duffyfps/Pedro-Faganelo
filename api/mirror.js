@@ -12,6 +12,7 @@ import { trackShortLink, trackLink, watch, readState, writeState } from '../lib/
 import { inQuietHours } from '../lib/sender.js';
 import { resolveCompetitorLink, createMlLink, sameProduct } from '../lib/mlLink.js';
 import { hasWatermark, amazonImage, cleanPhotoUrl } from '../lib/watermark.js';
+import { keepPhoto } from '../lib/photoStore.js';
 
 const TIME_BUDGET_MS = 45_000;
 
@@ -181,6 +182,8 @@ export default async function handler(req, res) {
         p.checkout = !!j.info.checkout;
         p.hook = j.info.hook;
         p.extras = j.info.extras;
+        // Foto do Telegram expira: guarda uma cópia permanente antes de salvar
+        if (p.image) p.image = await keepPhoto(p.image, `${p.id}_${j.post.id}`);
         try {
           if (await processProduct(p, { source })) out.queued++;
           else out.skipped.push(`${j.post.id}: repetida`);

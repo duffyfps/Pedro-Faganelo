@@ -1,6 +1,6 @@
 // Repassa a foto do produto (para o painel/WhatsApp). Com ?top= ou ?bottom= (fração 0–0.25),
 // corta essa faixa da foto — usado para tirar o selo de outro canal sem perder a foto.
-const ALLOWED = /(^|\.)(media-amazon\.com|ssl-images-amazon\.com|mlstatic\.com|telesco\.pe)$/i;
+const ALLOWED = /(^|\.)(media-amazon\.com|ssl-images-amazon\.com|mlstatic\.com|telesco\.pe|supabase\.co)$/i;
 
 export default async function handler(req, res) {
   try {
