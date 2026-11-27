@@ -13,6 +13,7 @@ import { inQuietHours } from '../lib/sender.js';
 import { resolveCompetitorLink, createMlLink, sameProduct } from '../lib/mlLink.js';
 import { hasWatermark, amazonImage, cleanPhotoUrl } from '../lib/watermark.js';
 import { keepPhoto } from '../lib/photoStore.js';
+import { checkSome } from '../lib/availability.js';
 
 const TIME_BUDGET_MS = 45_000;
 
@@ -223,6 +224,18 @@ export default async function handler(req, res) {
     out.whatsapp = await sendDue();
   } catch (e) {
     out.errors.push(`envio: ${e.message.slice(0, 200)}`);
+  }
+  // A cada ~4 min (se sobrar tempo): confere se anúncios já enviados continuam no ar e tira do site os pausados
+  try {
+    if (Date.now() - started < 25000) {
+      const lastCheck = Number(await readState('avail_last')) || 0;
+      if (Date.now() - lastCheck > 4 * 60000) {
+        await writeState('avail_last', Date.now());
+        out.avail = await checkSome(4);
+      }
+    }
+  } catch (e) {
+    out.errors.push(`disponibilidade: ${e.message.slice(0, 120)}`);
   }
   out.ms = Date.now() - started;
   res.status(200).json(out);

@@ -9,9 +9,18 @@ async function recent(limit = 500) {
   const since = new Date(Date.now() - 10 * 86400000).toISOString();
   const rows = await db.select(
     'offers',
-    `status=eq.sent&sent_at=gte.${since}&select=id,price,old_price,discount_pct,coupon,message,sent_at,products(title,image,store)&order=sent_at.desc&limit=${limit}`
+    `status=eq.sent&sent_at=gte.${since}&select=id,product_id,price,old_price,discount_pct,coupon,message,sent_at,products(title,image,store)&order=sent_at.desc&limit=${limit}`
   );
-  return rows.filter((o) => o.products && o.products.title);
+  // Um produto aparece uma vez só (a oferta mais recente): mesmo produto ou mesmo nome = repetido
+  const seen = new Set();
+  const key = (t) => String(t).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
+  return rows.filter((o) => {
+    if (!o.products || !o.products.title) return false;
+    const k1 = `p:${o.product_id}`, k2 = `t:${key(o.products.title)}`;
+    if (seen.has(k1) || seen.has(k2)) return false;
+    seen.add(k1); seen.add(k2);
+    return true;
+  });
 }
 
 function pager(base, page, total) {
@@ -34,9 +43,12 @@ export default async function handler(req, res) {
     let html;
 
     if (r === 'home') {
-      const withCoupon = all.filter((o) => o.coupon).slice(0, 10);
-      const top = [...all.slice(0, 120)].filter((o) => (o.discount_pct || 0) >= 40).sort((a, b) => (b.discount_pct || 0) - (a.discount_pct || 0)).slice(0, 10);
-      const cheap = all.filter((o) => Number(o.price) <= 50).slice(0, 10);
+      // Cada oferta aparece em uma seção só da página inicial
+      const used = new Set(all.slice(0, 15).map((o) => o.id));
+      const take = (list) => { const out = list.filter((o) => !used.has(o.id)).slice(0, 10); out.forEach((o) => used.add(o.id)); return out; };
+      const top = take([...all.slice(0, 160)].filter((o) => (o.discount_pct || 0) >= 40).sort((a, b) => (b.discount_pct || 0) - (a.discount_pct || 0)));
+      const withCoupon = take(all.filter((o) => o.coupon));
+      const cheap = take(all.filter((o) => Number(o.price) <= 50));
       const counts = Object.fromEntries(CATEGORIES.map((c) => [c.slug, 0]));
       all.forEach((o) => { const c = catOf(o.products.title).slug; if (c in counts) counts[c]++; });
       const hot = CATEGORIES.filter((c) => counts[c.slug] > 0).sort((a, b) => counts[b.slug] - counts[a.slug]);
