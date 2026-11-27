@@ -1,5 +1,6 @@
 // Site público: início, ofertas, cupons, categorias, uma categoria e grupos
 import { db } from '../lib/db.js';
+import { profile } from '../lib/related.js';
 import { layout, card, joinBox, trustRow, catsGrid, catOf, catBySlug, CATEGORIES, esc, GROUP, SITE, hatImg } from '../lib/site.js';
 
 const PER_PAGE = 24;
@@ -165,6 +166,62 @@ ${joinBox()}`,
 ${GROUP() ? `<a class="btn wa" href="${esc(GROUP())}" rel="nofollow">Entrar no grupo do WhatsApp</a>` : '<p class="sub">Link do grupo em breve.</p>'}
 </section>
 <div class="sec"><h2>Veja o que você vai receber<small>Algumas das últimas ofertas do grupo</small></h2><a href="/ofertas">Ver ofertas →</a></div>${grid(all.slice(0, 10))}${trustRow()}`,
+      });
+    } else if (r === 'feminino') {
+      // Página do grupo feminino parceiro: Baratinho Diário (cores e logo dele)
+      const FEM_GROUP = 'https://chat.whatsapp.com/ISJYZJMqrOC7TGF36EKyVG';
+      const FEM_GROUPS = ['joia', 'bolsa', 'perfume', 'cabelo', 'pele', 'maquiagem'];
+      const fem = all.filter((o) => { const pr = profile(o.products.title); return pr.gender === 'f' || (pr.gender !== 'm' && [...pr.groups].some((g) => FEM_GROUPS.includes(g))); }).slice(0, 10);
+      const wa = '<svg viewBox="0 0 32 32" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M16 3a13 13 0 0 0-11.2 19.6L3 29l6.6-1.7A13 13 0 1 0 16 3zm0 23.6c-2 0-4-.5-5.7-1.6l-.4-.2-3.9 1 1-3.8-.3-.4A10.6 10.6 0 1 1 16 26.6zm5.8-7.9c-.3-.2-1.9-.9-2.2-1s-.5-.2-.7.2-.8 1-1 1.2-.4.2-.7 0a8.7 8.7 0 0 1-2.6-1.6 9.6 9.6 0 0 1-1.8-2.2c-.2-.3 0-.5.1-.7l.5-.6.3-.5v-.5l-1-2.4c-.3-.6-.5-.5-.7-.5h-.6a1.2 1.2 0 0 0-.9.4 3.6 3.6 0 0 0-1.1 2.7 6.3 6.3 0 0 0 1.3 3.3 14.4 14.4 0 0 0 5.5 4.9c2 .8 2.8.9 3.8.7a3.2 3.2 0 0 0 2.1-1.5 2.6 2.6 0 0 0 .2-1.5c-.1-.1-.3-.2-.6-.4z"/></svg>';
+      html = layout({
+        title: 'Grupo feminino Baratinho Diário — achadinhos para mulheres no WhatsApp',
+        desc: 'Entre no grupo Baratinho Diário: beleza, skincare, moda, perfumes e achadinhos com desconto, todo dia no seu WhatsApp. Grátis.',
+        active: 'feminino',
+        host,
+        head: `<meta name="theme-color" content="#ff1f7a"><meta property="og:image" content="https://${host}/baratinho-logo.webp"><style>
+.fem{--p:#ff1f7a;--p2:#a3124f;--p3:#ffe3ef;--p4:#fff4f8}
+.fem .fhero{position:relative;overflow:hidden;border-radius:26px;margin:18px 0 26px;padding:38px 26px 34px;text-align:center;color:#fff;background:radial-gradient(1200px 400px at 50% -10%,#ff6fae 0,transparent 60%),linear-gradient(160deg,#ff2d86 0%,#e3126a 55%,#a3124f 100%);box-shadow:0 18px 50px rgba(227,18,106,.35)}
+.fem .fhero:before,.fem .fhero:after{content:"";position:absolute;border-radius:50%;background:rgba(255,255,255,.08)}
+.fem .fhero:before{width:340px;height:340px;left:-120px;top:-120px}.fem .fhero:after{width:260px;height:260px;right:-90px;bottom:-110px}
+.fem .flogo{position:relative;display:inline-block;background:#fff;border-radius:22px;padding:16px 22px;box-shadow:0 10px 30px rgba(120,0,50,.25)}
+.fem .flogo img{display:block;width:min(340px,70vw);height:auto}
+.fem .fkick{position:relative;display:inline-block;margin:20px 0 8px;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35);padding:6px 14px;border-radius:99px;font-weight:700;font-size:13px;letter-spacing:.3px}
+.fem h1{position:relative;font-family:'Playfair Display',serif;font-weight:900;font-size:clamp(28px,5vw,44px);line-height:1.08;margin:6px auto 12px;max-width:760px}
+.fem .fhero p{position:relative;max-width:620px;margin:0 auto 22px;font-size:17px;line-height:1.5;color:#ffe9f2}
+.fem .fbtn{position:relative;display:inline-flex;align-items:center;gap:10px;background:#fff;color:var(--p2);text-decoration:none;font-weight:900;font-size:18px;padding:16px 28px;border-radius:99px;box-shadow:0 10px 26px rgba(90,0,40,.3);transition:transform .15s}
+.fem .fbtn:hover{transform:translateY(-2px)}.fem .fbtn svg{color:#25d366}
+.fem .fnote{position:relative;margin-top:12px;font-size:13px;color:#ffd3e4}
+.fem .fgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px;margin:0 0 30px}
+.fem .fcard{background:var(--p4);border:1px solid var(--p3);border-radius:18px;padding:18px}
+.fem .fcard b{display:block;font-size:26px;margin-bottom:6px}.fem .fcard h3{margin:0 0 4px;color:var(--p2);font-size:17px}.fem .fcard p{margin:0;color:#6b4a57;font-size:14px;line-height:1.45}
+.fem .fsteps{counter-reset:s;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin:0 0 30px;padding:0;list-style:none}
+.fem .fsteps li{counter-increment:s;background:#fff;border:1px solid var(--p3);border-radius:16px;padding:16px 16px 16px 58px;position:relative;color:#4b3540;font-size:15px}
+.fem .fsteps li:before{content:counter(s);position:absolute;left:14px;top:14px;width:32px;height:32px;border-radius:50%;background:var(--p);color:#fff;font-weight:900;display:grid;place-items:center}
+.fem .sec h2{color:var(--p2)}.fem .sec a{color:var(--p)}
+.fem .fend{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:14px;background:linear-gradient(120deg,#ff2d86,#a3124f);color:#fff;border-radius:22px;padding:22px 24px;margin:30px 0 10px}
+.fem .fend img{height:44px;width:auto}.fem .fend strong{font-size:19px}.fem .fend .fbtn{font-size:16px;padding:13px 22px}
+</style>`,
+        body: `<div class="fem">
+<div class="crumbs"><a href="/">Início</a> / Grupo feminino</div>
+<section class="fhero">
+  <div class="flogo"><img src="/baratinho-logo.webp" alt="Baratinho Diário" width="480" height="245"></div><br>
+  <span class="fkick">💖 Grupo feminino · 100% grátis</span>
+  <h1>Os achadinhos que toda mulher ama, todo dia no seu WhatsApp</h1>
+  <p>No <strong>Baratinho Diário</strong> você recebe as melhores promoções de beleza, skincare, perfumes, moda e casa, com cupons e preços baixinhos, escolhidas a dedo.</p>
+  <a class="fbtn" href="${FEM_GROUP}" rel="nofollow noopener" target="_blank">${wa} Entrar no grupo Baratinho Diário</a>
+  <div class="fnote">Sem spam · Você sai quando quiser</div>
+</section>
+<div class="fgrid">
+  <div class="fcard"><b>💄</b><h3>Beleza e skincare</h3><p>Maquiagem, cabelo e cuidados com a pele das marcas que você já usa, por menos.</p></div>
+  <div class="fcard"><b>🌸</b><h3>Perfumes</h3><p>Importados, árabes e nacionais com descontos de verdade.</p></div>
+  <div class="fcard"><b>👜</b><h3>Moda e acessórios</h3><p>Bolsas, roupas, calçados, joias e relógios em promoção.</p></div>
+  <div class="fcard"><b>🎟️</b><h3>Cupons e achadinhos</h3><p>Cupons que funcionam e achadinhos para casa e presentes.</p></div>
+</div>
+<div class="sec"><h2>Como entrar</h2></div>
+<ol class="fsteps"><li>Toque no botão <strong>Entrar no grupo</strong>.</li><li>O WhatsApp abre: toque em <strong>Entrar no grupo</strong> de novo.</li><li>Pronto! Agora é só aproveitar os achadinhos 💕</li></ol>
+${fem.length ? `<div class="sec"><h2>Achadinhos femininos de hoje<small>Alguns que estão em promoção agora</small></h2><a href="/ofertas">Ver mais →</a></div>${grid(fem)}` : ''}
+<div class="fend"><img src="/baratinho-logo.webp" alt="Baratinho Diário" style="background:#fff;border-radius:12px;padding:6px 10px"><strong>Vem pro grupo das mulheres que compram bem 💖</strong><a class="fbtn" href="${FEM_GROUP}" rel="nofollow noopener" target="_blank">${wa} Entrar agora</a></div>
+</div>`,
       });
     } else {
       return res.status(404).send('Página não encontrada');
