@@ -1,5 +1,6 @@
 // Página de cada oferta (/p/<código>). As tags og:* fazem o WhatsApp mostrar a prévia (foto + nome + preço).
 import { db } from '../lib/db.js';
+import { related } from '../lib/related.js';
 import { layout, card, joinBox, catsGrid, catOf, CATEGORIES, esc, brl, img, storeName, naLoja, storeLink, dealInfo, ago, codeOf, idOf, SITE } from '../lib/site.js';
 
 const PCSS = `
@@ -42,12 +43,13 @@ export default async function handler(req, res) {
     const p = o.products;
     const link = storeLink(o.message) || p.url;
     const cat = catOf(p.title);
-    const since = new Date(Date.now() - 10 * 86400000).toISOString();
+    const since = new Date(Date.now() - 30 * 86400000).toISOString();
     const recent = (await db.select(
       'offers',
-      `status=eq.sent&id=neq.${id}&sent_at=gte.${since}&select=id,price,old_price,discount_pct,coupon,message,sent_at,products(title,image,store)&order=sent_at.desc&limit=300`
+      `status=eq.sent&id=neq.${id}&sent_at=gte.${since}&select=id,price,old_price,discount_pct,coupon,message,sent_at,products(title,image,store)&order=sent_at.desc&limit=800`
     )).filter((m) => m.products && m.products.title);
-    const same = recent.filter((m) => catOf(m.products.title).slug === cat.slug).slice(0, 8);
+    // Relacionados pelo nome do produto (ex.: bracelete feminino → pulseiras, colares, brincos), não só pela categoria
+    const same = related(p.title, recent, (m) => m.products.title, { max: 10, sameCat: (m) => catOf(m.products.title).slug === cat.slug });
     const latest = recent.filter((m) => !same.includes(m)).slice(0, 8);
 
     const store = storeName(p.store);
@@ -108,7 +110,7 @@ ${pic ? `<meta property="og:image" content="${esc(pic)}"><meta property="og:imag
 </div>
 ${link ? `<div class="sticky"><div><b>${brl(o.price)}</b><small>${d.pix ? 'no Pix · ' : ''}${o.discount_pct ? `${o.discount_pct}% OFF ` : ''}${naLoja(p.store)}</small></div><a class="btn red" href="${esc(link)}" rel="nofollow sponsored">Pegar promoção →</a></div>` : ''}
 ${joinBox()}
-${same.length ? `<div class="sec"><h2>Mais ofertas de ${esc(cat.name)}</h2><a href="/categoria/${cat.slug}">Ver mais →</a></div><div class="grid">${same.map(card).join('')}</div>` : ''}
+${same.length ? `<div class="sec"><h2>Você também vai gostar</h2><a href="/categoria/${cat.slug}">Ver mais →</a></div><div class="grid">${same.map(card).join('')}</div>` : ''}
 ${latest.length ? `<div class="sec"><h2>⚡ Últimas ofertas</h2><a href="/ofertas">Ver todas →</a></div><div class="grid">${latest.map(card).join('')}</div>` : ''}
 <div class="sec"><h2>Categorias</h2><a href="/categorias">Todas →</a></div>
 ${catsGrid(CATEGORIES.slice(0, 8))}`;
