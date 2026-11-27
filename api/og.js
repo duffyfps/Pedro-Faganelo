@@ -19,7 +19,7 @@ export default async function handler(req, res) {
     const layers = [];
     if (logo) {
       // Logo com fundo transparente no canto de baixo, com uma sombra leve para destacar em qualquer foto
-      const lg = await sharp(Buffer.from(logo)).resize({ width: Math.round(Math.min(pm.width, pm.height) * 0.3) }).toBuffer();
+      const lg = await sharp(Buffer.from(logo)).resize({ width: Math.round(Math.min(pm.width, pm.height) * (brand().markScale || 0.3)) }).toBuffer();
       const meta = await sharp(lg).metadata();
       const shadow = await sharp(lg).ensureAlpha().extractChannel('alpha').blur(14).linear(0.55, 0).toColourspace('b-w').toBuffer();
       const sh = await sharp({ create: { width: meta.width, height: meta.height, channels: 3, background: '#000000' } }).joinChannel(shadow).png().toBuffer();

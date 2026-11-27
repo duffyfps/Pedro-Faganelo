@@ -185,6 +185,7 @@ export default async function handler(req, res) {
         p.prime = !!j.info.prime;
         p.checkout = !!j.info.checkout;
         p.hook = j.info.hook;
+        p.rawHook = j.info.rawHook;
         p.extras = j.info.extras;
         // Foto do Telegram expira: guarda uma cópia permanente antes de salvar
         if (p.image) p.image = await keepPhoto(p.image, `${p.id}_${j.post.id}`);
