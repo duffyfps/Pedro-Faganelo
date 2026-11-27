@@ -54,7 +54,8 @@ export default async function handler(req, res) {
       const hot = CATEGORIES.filter((c) => counts[c.slug] > 0).sort((a, b) => counts[b.slug] - counts[a.slug]);
       const today = all.filter((o) => Date.now() - new Date(o.sent_at) < 86400000);
       const maxOff = Math.max(0, ...today.map((o) => o.discount_pct || 0));
-      const coupons = today.filter((o) => o.coupon).length;
+      // Ritmo de postagem nas últimas 24h (em vez de contar cupons, que entram e saem o tempo todo)
+      const every = today.length >= 10 ? Math.max(1, Math.round(1440 / today.length)) : 0;
       html = layout({
         title: `${SITE()} — as melhores ofertas da Amazon e do Mercado Livre`,
         desc: 'Ofertas, cupons e promoções selecionadas da Amazon e do Mercado Livre, atualizadas o dia todo.',
@@ -73,7 +74,7 @@ export default async function handler(req, res) {
   <div class="stats">
     <div><b>${today.length || all.length}</b><span>ofertas ${today.length ? 'nas últimas 24h' : 'recentes'}</span></div>
     ${maxOff ? `<div><b>até ${maxOff}%</b><span>de desconto hoje</span></div>` : ''}
-    ${coupons ? `<div><b>${coupons}</b><span>cupons ativos</span></div>` : ''}
+    ${every ? `<div><b>a cada ${every} min</b><span>uma oferta nova</span></div>` : ''}
     <div><b>2 lojas</b><span>Amazon e Mercado Livre</span></div>
   </div>
 </section>
