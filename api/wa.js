@@ -25,6 +25,10 @@ export default async function handler(req, res) {
     if (action === 'status') return res.status(200).json({ state: await A.state(), provider: await provider() });
     if (action === 'qr') return res.status(200).json({ qr: await A.qr(), state: await A.state() });
     if (action === 'groups') return res.status(200).json({ groups: await A.groups(), current: (process.env.WA_GROUP_ID || '').trim() });
+    if (action === 'join' && req.method === 'POST' && !isGo) {
+      const code = String(req.query.code || '').replace(/^.*chat\.whatsapp\.com\//, '').replace(/[?#].*$/, '');
+      return res.status(200).json(await evoAdmin.join(code));
+    }
     if (action === 'test' && !isGo) {
       await evoAdmin.test('✅ Caça-Ofertas: teste da Evolution API — seu chip está conectado e enviando.');
       return res.status(200).json({ ok: true });
