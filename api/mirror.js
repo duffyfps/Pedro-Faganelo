@@ -14,6 +14,7 @@ import { resolveCompetitorLink, createMlLink, sameProduct } from '../lib/mlLink.
 import { hasWatermark, amazonImage, cleanPhotoUrl } from '../lib/watermark.js';
 import { keepPhoto } from '../lib/photoStore.js';
 import { checkSome } from '../lib/availability.js';
+import { fetchWaGroup, waGroups } from '../lib/waSource.js';
 
 const TIME_BUDGET_MS = 45_000;
 
@@ -47,7 +48,9 @@ async function mlData(ids) {
 export default async function handler(req, res) {
   if (!requireCronKey(req, res)) return;
   const started = Date.now();
-  const channels = (process.env.SOURCE_CHANNELS || 'xetdaspromocoes').split(',').map((s) => s.trim()).filter(Boolean);
+  // Fontes: canais do Telegram (SOURCE_CHANNELS) e/ou grupos de WhatsApp (SOURCE_WA_GROUPS, ids …@g.us)
+  const tg = process.env.SOURCE_CHANNELS ?? (process.env.SOURCE_WA_GROUPS ? '' : 'xetdaspromocoes');
+  const channels = [...tg.split(',').map((s) => s.trim()).filter(Boolean), ...waGroups().map((g) => `wa:${g}`)];
   const out = { posts: 0, queued: 0, skipped: [], errors: [] };
 
   for (const channel of channels) {
@@ -55,7 +58,7 @@ export default async function handler(req, res) {
       const key = `last:${channel}`;
       const [st] = await db.select('state', `key=eq.${encodeURIComponent(key)}`);
       const last = st ? Number(st.value) : null;
-      const posts = await fetchChannel(channel);
+      const posts = channel.startsWith('wa:') ? await fetchWaGroup(channel.slice(3), last) : await fetchChannel(channel);
       if (!posts.length) continue;
       let todo = last === null ? posts.slice(-FIRST_RUN_POSTS) : posts.filter((p) => p.id > last);
       let lastDone = last ?? 0;
