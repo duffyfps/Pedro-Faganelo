@@ -21,7 +21,7 @@ export default async function handler(req, res) {
   // /api/fotos?official=1: troca a foto das ofertas recentes pela foto oficial da loja (tira fotos de post com logo de outro canal)
   if (req.query.official) {
     const since = new Date(Date.now() - (Number(req.query.days) || 2) * 864e5).toISOString();
-    const list = await db.select('products', `updated_at=gte.${since}&select=id,store,image,url,open_url&order=updated_at.desc&limit=${Math.min(40, Number(req.query.limit) || 25)}&offset=${Number(req.query.offset) || 0}`);
+    const list = await db.select('products', `updated_at=gte.${since}&select=*&order=updated_at.desc&limit=${Math.min(40, Number(req.query.limit) || 25)}&offset=${Number(req.query.offset) || 0}`);
     const t1 = Date.now(), out = [];
     for (const p of list) {
       if (Date.now() - t1 > 50000) { out.push({ id: p.id, r: 'sem tempo' }); continue; }
