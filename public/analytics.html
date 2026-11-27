@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Métricas — Magnata e Baratinho</title>
+<style>
+.viz-root{color-scheme:light;--bg:#f4f5f7;--surface-1:#ffffff;--line:#e6e8ec;--grid:#eef0f3;--text-primary:#191919;--text-secondary:#666;--series-1:#257de0;--series-2:#f47230;--up:#0a7a28;--down:#c2362f}
+@media (prefers-color-scheme:dark){:root:where(:not([data-theme="light"])) .viz-root{color-scheme:dark;--bg:#111214;--surface-1:#191919;--line:#2c2e33;--grid:#26282c;--text-primary:#efefef;--text-secondary:#9c9c9c;--series-1:#338ced;--series-2:#e76624;--up:#3fbf62;--down:#eb6263}}
+*{box-sizing:border-box}body{margin:0;font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+.viz-root{background:var(--bg);color:var(--text-primary);min-height:100vh}
+header{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;padding:16px 20px;background:var(--surface-1);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
+h1{font-size:18px;margin:0}
+.ctl{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{border:0;background:transparent;color:var(--text-primary);padding:7px 12px;font:inherit;cursor:pointer}
+.seg button.on{background:var(--text-primary);color:var(--surface-1)}
+main{padding:18px 20px 40px;max-width:1280px;margin:0 auto}
+.kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px;margin-bottom:14px}
+.kpi{background:var(--surface-1);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.kpi .l{color:var(--text-secondary);font-size:12px}.kpi .v{font-size:24px;font-weight:700;margin-top:2px;font-variant-numeric:tabular-nums}
+.kpi .d{font-size:12px;margin-top:2px;color:var(--text-secondary)}.kpi .d.up{color:var(--up)}.kpi .d.down{color:var(--down)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:12px}
+.card{background:var(--surface-1);border:1px solid var(--line);border-radius:12px;padding:14px 16px;min-width:0}
+.card h2{font-size:14px;margin:0 0 2px}.card .sub{color:var(--text-secondary);font-size:12px;margin-bottom:10px}
+.wide{grid-column:1/-1}
+.bars .row{display:grid;grid-template-columns:minmax(0,1fr) 60px;gap:8px;align-items:center;padding:4px 0;position:relative}
+.bars .lab{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;position:relative;z-index:1;padding:2px 6px}
+.bars .fill{position:absolute;left:0;top:3px;bottom:3px;background:var(--series-1);opacity:.18;border-radius:0 4px 4px 0}
+.bars .n{text-align:right;font-variant-numeric:tabular-nums}
+table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:7px 6px;border-bottom:1px solid var(--grid);vertical-align:middle}
+th{color:var(--text-secondary);font-weight:600;font-size:12px}td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+td img{width:38px;height:38px;object-fit:contain;background:#fff;border-radius:6px;border:1px solid var(--grid)}
+.tt{position:fixed;pointer-events:none;background:var(--text-primary);color:var(--surface-1);padding:6px 9px;border-radius:8px;font-size:12px;display:none;z-index:20;white-space:nowrap}
+svg text{fill:var(--text-secondary);font-size:11px}
+.empty{color:var(--text-secondary);padding:10px 0}
+.login{max-width:420px;margin:60px auto;background:var(--surface-1);border:1px solid var(--line);border-radius:14px;padding:22px}
+.login label{display:block;font-size:12px;color:var(--text-secondary);margin:12px 0 4px}
+.login input{width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--text-primary);font:inherit}
+.btn{border:0;background:var(--series-1);color:#fff;border-radius:9px;padding:10px 14px;font:inherit;font-weight:600;cursor:pointer;margin-top:14px;width:100%}
+.legend{display:flex;gap:14px;font-size:12px;color:var(--text-secondary);margin-bottom:6px}.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.err{color:var(--down);font-size:13px;margin-top:8px}
+.store{font-size:11px;padding:1px 6px;border-radius:5px;border:1px solid var(--line);color:var(--text-secondary)}
+</style></head>
+<body><div class="viz-root">
+<header><h1>📊 Métricas dos sites</h1>
+<div class="ctl">
+  <div class="seg" id="siteSeg"><button data-s="mag" class="on">Magnata</button><button data-s="bar">Baratinho</button><button data-s="cmp">Comparar</button></div>
+  <div class="seg" id="daySeg"><button data-d="1">Hoje</button><button data-d="7" class="on">7 dias</button><button data-d="30">30 dias</button><button data-d="90">90 dias</button></div>
+  <button class="seg" id="sair" style="padding:7px 12px;background:transparent;color:var(--text-secondary);cursor:pointer">Sair</button>
+</div></header>
+<main id="app"></main>
+<div class="tt" id="tt"></div>
+</div>
+<script>
+const SITES = {
+  mag: { name: 'Magnata', url: 'https://magnatapromocoes.com.br', key: 'an_mag' },
+  bar: { name: 'Baratinho', url: 'https://baratinho-diario.vercel.app', key: 'an_bar' },
+};
+let site = 'mag', days = 7;
+const app = document.getElementById('app'), tt = document.getElementById('tt');
+const fmt = (n) => (n == null ? '–' : Number(n).toLocaleString('pt-BR'));
+const pct = (a, b) => (b ? (100 * a) / b : 0);
+const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const brl = (n) => (n == null ? '' : Number(n).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }));
+const code = (id) => Number(id).toString(36);
+
+function loginView(msg) {
+  app.innerHTML = `<div class="login"><h2 style="margin:0 0 6px;font-size:17px">Entrar</h2>
+  <div class="sub" style="color:var(--text-secondary);font-size:13px">Use a senha do painel de cada site. Fica salva só neste navegador.</div>
+  <label>Senha do painel do Magnata</label><input type="password" id="pm" value="${esc(localStorage.getItem('an_mag') || '')}">
+  <label>Senha do painel do Baratinho</label><input type="password" id="pb" value="${esc(localStorage.getItem('an_bar') || '')}">
+  <button class="btn" id="go">Ver métricas</button>${msg ? `<div class="err">${esc(msg)}</div>` : ''}</div>`;
+  document.getElementById('go').onclick = () => {
+    localStorage.setItem('an_mag', document.getElementById('pm').value.trim());
+    localStorage.setItem('an_bar', document.getElementById('pb').value.trim());
+    render();
+  };
+}
+
+async function load(s) {
+  const S = SITES[s];
+  const pass = localStorage.getItem(S.key);
+  if (!pass) throw Object.assign(new Error('sem senha'), { login: true });
+  const r = await fetch(`${S.url}/api/site?r=stats&days=${days}`, { headers: { 'x-senha': pass } });
+  if (r.status === 401) throw Object.assign(new Error(`Senha do ${S.name} incorreta`), { login: true });
+  if (!r.ok) throw new Error(`${S.name}: erro ${r.status}`);
+  return r.json();
+}
+
+function delta(cur, prev, invert) {
+  if (prev == null || cur == null) return '<div class="d">&nbsp;</div>';
+  if (!prev) return `<div class="d">${cur ? 'novo' : 'sem dados antes'}</div>`;
+  const d = ((cur - prev) / prev) * 100;
+  const good = invert ? d < 0 : d > 0;
+  return `<div class="d ${Math.abs(d) < 0.5 ? '' : good ? 'up' : 'down'}">${d > 0 ? '▲' : d < 0 ? '▼' : '•'} ${Math.abs(d).toFixed(0)}% vs período anterior</div>`;
+}
+
+function kpis(j) {
+  const t = j.totals || {}, p = j.prev || {}, e = j.engagement || {};
+  const ctr = pct(t.buy, t.pviews), pctr = pct(p.buy, p.pviews);
+  const items = [
+    ['Visitantes', fmt(t.uv), delta(t.uv, p.uv)],
+    ['Páginas vistas', fmt(t.pv), delta(t.pv, p.pv)],
+    ['Sessões', fmt(t.sessions), delta(t.sessions, p.sessions)],
+    ['Ofertas abertas', fmt(t.pviews), delta(t.pviews, p.pviews)],
+    ['Cliques para a loja', fmt(t.buy), delta(t.buy, p.buy)],
+    ['Pessoas que clicaram na loja', fmt(t.buyers), delta(t.buyers, p.buyers)],
+    ['Taxa de clique na loja', ctr.toFixed(1) + '%', delta(ctr, pctr)],
+    ['Cliques no grupo', fmt(t.grp), delta(t.grp, p.grp)],
+    ['Páginas por sessão', e.pages_per_session ?? '–', '<div class="d">média</div>'],
+    ['Saíram sem navegar', (e.bounce ?? '–') + '%', '<div class="d">sessões com 1 página</div>'],
+    ['Tempo médio na sessão', e.avg_seconds != null ? `${Math.floor(e.avg_seconds / 60)}m ${e.avg_seconds % 60}s` : '–', '<div class="d">entre o 1º e o último clique</div>'],
+    ['Visitantes que voltaram', fmt(e.returning), '<div class="d">mais de uma sessão</div>'],
+  ];
+  return `<div class="kpis">${items.map(([l, v, d]) => `<div class="kpi"><div class="l">${l}</div><div class="v">${v}</div>${d}</div>`).join('')}</div>`;
+}
+
+function barsList(title, sub, list, unit = '') {
+  list = list || [];
+  const max = Math.max(1, ...list.map((x) => x.n));
+  return `<div class="card"><h2>${title}</h2><div class="sub">${sub}</div>${
+    list.length ? `<div class="bars">${list.map((x) => `<div class="row" data-tip="${esc(x.k)}: ${fmt(x.n)}${unit}${x.u != null ? ` · ${fmt(x.u)} pessoas` : ''}"><div class="lab"><span class="fill" style="width:${(100 * x.n) / max}%"></span><span style="position:relative">${esc(x.k)}</span></div><div class="n">${fmt(x.n)}</div></div>`).join('')}</div>` : '<div class="empty">Ainda sem dados.</div>'
+  }</div>`;
+}
+
+// Gráfico de barras vertical (um eixo, uma medida)
+function vbars(data, key, labelFn, color, h = 150) {
+  if (!data.length) return '<div class="empty">Ainda sem dados.</div>';
+  const W = 640, pad = 26, max = Math.max(1, ...data.map((d) => d[key]));
+  const bw = (W - pad) / data.length;
+  const ticks = [0, max / 2, max].map((v) => Math.round(v));
+  let s = `<svg viewBox="0 0 ${W} ${h + 22}" width="100%" role="img">`;
+  ticks.forEach((v) => { const y = h - (v / max) * (h - 8); s += `<line x1="${pad}" x2="${W}" y1="${y}" y2="${y}" stroke="var(--grid)"/><text x="${pad - 4}" y="${y + 4}" text-anchor="end">${v}</text>`; });
+  data.forEach((d, i) => {
+    const v = d[key], bh = (v / max) * (h - 8), x = pad + i * bw + 1, w = Math.max(2, bw - 2);
+    s += `<g class="hit" data-tip="${esc(labelFn(d, true))}: ${fmt(v)}"><rect x="${pad + i * bw}" y="0" width="${bw}" height="${h}" fill="transparent"/>${v ? `<path d="M${x},${h} V${h - bh + 4} q0,-4 4,-4 h${w - 8} q4,0 4,4 V${h} Z" fill="${color}"/>` : ''}</g>`;
+    if (data.length <= 24 || i % Math.ceil(data.length / 12) === 0) s += `<text x="${x + w / 2}" y="${h + 15}" text-anchor="middle">${esc(labelFn(d, false))}</text>`;
+  });
+  return s + '</svg>';
+}
+
+// Linha com cruz ao passar o mouse
+function line(data, key, labelFn, color, h = 150) {
+  if (!data.length) return '<div class="empty">Ainda sem dados.</div>';
+  const W = 640, pad = 26, max = Math.max(1, ...data.map((d) => d[key]));
+  const X = (i) => pad + (data.length === 1 ? (W - pad) / 2 : (i * (W - pad - 8)) / (data.length - 1) + 4);
+  const Y = (v) => h - (v / max) * (h - 10);
+  let s = `<svg viewBox="0 0 ${W} ${h + 22}" width="100%" role="img">`;
+  [0, max / 2, max].map(Math.round).forEach((v) => { s += `<line x1="${pad}" x2="${W}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--grid)"/><text x="${pad - 4}" y="${Y(v) + 4}" text-anchor="end">${v}</text>`; });
+  s += `<polyline fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round" points="${data.map((d, i) => `${X(i)},${Y(d[key])}`).join(' ')}"/>`;
+  const step = (W - pad) / data.length;
+  data.forEach((d, i) => {
+    s += `<g class="hit" data-tip="${esc(labelFn(d, true))}: ${fmt(d[key])}"><rect x="${X(i) - step / 2}" y="0" width="${step}" height="${h}" fill="transparent"/><circle cx="${X(i)}" cy="${Y(d[key])}" r="4" fill="${color}" stroke="var(--surface-1)" stroke-width="2"/></g>`;
+    if (data.length <= 14 || i % Math.ceil(data.length / 10) === 0) s += `<text x="${X(i)}" y="${h + 15}" text-anchor="middle">${esc(labelFn(d, false))}</text>`;
+  });
+  return s + '</svg>';
+}
+
+const dayLab = (d, long) => { const [y, m, dd] = d.d.split('-'); return long ? `${dd}/${m}/${y}` : `${dd}/${m}`; };
+const WD = ['', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb', 'dom'];
+
+function fillDays(daily) {
+  const map = Object.fromEntries((daily || []).map((d) => [d.d, d]));
+  const out = [];
+  for (let i = days - 1; i >= 0; i--) {
+    const dt = new Date(Date.now() - i * 864e5).toLocaleDateString('sv-SE', { timeZone: 'America/Sao_Paulo' });
+    out.push(map[dt] || { d: dt, pv: 0, uv: 0, buy: 0, grp: 0, card: 0 });
+  }
+  return out;
+}
+
+function siteView(j, S) {
+  const daily = fillDays(j.daily);
+  const hours = Array.from({ length: 24 }, (_, h) => (j.hourly || []).find((x) => x.h === h) || { h, pv: 0, buy: 0 });
+  const wk = Array.from({ length: 7 }, (_, i) => (j.weekday || []).find((x) => x.w === i + 1) || { w: i + 1, pv: 0, buy: 0 });
+  const offers = j.offers || [];
+  const storeName = (s) => (s === 'amazon' ? 'Amazon' : s === 'ml' ? 'Mercado Livre' : s);
+  return `${kpis(j)}
+  <div class="grid">
+    ${days > 1 ? `<div class="card"><h2>Visitantes por dia</h2><div class="sub">pessoas diferentes que abriram o site</div>${line(daily, 'uv', dayLab, 'var(--series-1)')}</div>
+    <div class="card"><h2>Cliques para a loja por dia</h2><div class="sub">vezes que alguém foi para a Amazon ou o Mercado Livre</div>${vbars(daily, 'buy', dayLab, 'var(--series-2)')}</div>` : ''}
+    <div class="card"><h2>Visitas por hora do dia</h2><div class="sub">páginas vistas, horário de Brasília</div>${vbars(hours, 'pv', (d, l) => (l ? `${d.h}h–${d.h + 1}h` : d.h % 3 === 0 ? `${d.h}h` : ''), 'var(--series-1)')}</div>
+    <div class="card"><h2>Cliques para a loja por hora</h2><div class="sub">quando as pessoas mais compram</div>${vbars(hours, 'buy', (d, l) => (l ? `${d.h}h–${d.h + 1}h` : d.h % 3 === 0 ? `${d.h}h` : ''), 'var(--series-2)')}</div>
+    ${days >= 7 ? `<div class="card"><h2>Visitas por dia da semana</h2><div class="sub">páginas vistas</div>${vbars(wk, 'pv', (d) => WD[d.w], 'var(--series-1)')}</div>` : ''}
+    <div class="card wide"><h2>Ofertas mais clicadas</h2><div class="sub">ordenadas por cliques para a loja · taxa = cliques na loja ÷ vezes que a oferta foi aberta</div>
+    ${offers.length ? `<div style="overflow:auto"><table><thead><tr><th></th><th>Oferta</th><th>Loja</th><th class="num">Preço</th><th class="num">Desconto</th><th class="num">Abriram pela lista</th><th class="num">Abriram a oferta</th><th class="num">Foram à loja</th><th class="num">Taxa</th></tr></thead><tbody>
+    ${offers.map((o) => `<tr><td>${o.image ? `<img loading="lazy" src="${S.url}/api/img?url=${encodeURIComponent(o.image)}" alt="">` : ''}</td><td><a href="${S.url}/p/${code(o.oid)}" target="_blank" style="color:inherit">${esc(o.title || `oferta ${o.oid}`)}</a></td><td><span class="store">${esc(storeName(o.store) || '')}</span></td><td class="num">${brl(o.price)}</td><td class="num">${o.off ? `-${o.off}%` : ''}</td><td class="num">${fmt(o.cards)}</td><td class="num">${fmt(o.views)}</td><td class="num"><b>${fmt(o.buys)}</b></td><td class="num">${o.views ? pct(o.buys, o.views).toFixed(0) + '%' : '–'}</td></tr>`).join('')}
+    </tbody></table></div>` : '<div class="empty">Ainda sem dados.</div>'}</div>
+    ${barsList('Páginas mais vistas', 'páginas vistas · pessoas', j.pages)}
+    ${barsList('De onde vêm as visitas', '"direto" na página de oferta = quase sempre o link do grupo de WhatsApp', j.refs)}
+    ${barsList('Seções que mais geram cliques', 'de onde as pessoas abriram ofertas', j.sections)}
+    ${barsList('Menu mais clicado', 'itens do menu do topo', j.nav)}
+    ${barsList('Categorias mais clicadas', '', j.cats)}
+    ${barsList('O que mais pesquisam', 'buscas feitas no site', j.searches)}
+    ${barsList('Cliques no grupo de WhatsApp', 'página · botão', j.groups)}
+    ${barsList('Cliques para a loja por loja', '', (j.stores || []).map((x) => ({ ...x, k: storeName(x.k) })))}
+    ${barsList('Aparelho', 'pessoas diferentes', j.devices)}
+    ${j.sources?.length ? barsList('Campanhas (utm_source / ?s=)', '', j.sources) : ''}
+    ${j.outs?.length ? barsList('Outros links clicados', 'links para fora do site', j.outs) : ''}
+  </div>`;
+}
+
+function cmpView(a, b) {
+  const rows = [
+    ['Visitantes', (j) => j.totals.uv], ['Páginas vistas', (j) => j.totals.pv], ['Sessões', (j) => j.totals.sessions],
+    ['Ofertas abertas', (j) => j.totals.pviews], ['Cliques para a loja', (j) => j.totals.buy], ['Pessoas que clicaram na loja', (j) => j.totals.buyers],
+    ['Taxa de clique na loja', (j) => pct(j.totals.buy, j.totals.pviews).toFixed(1) + '%'], ['Cliques no grupo', (j) => j.totals.grp],
+    ['Páginas por sessão', (j) => j.engagement.pages_per_session], ['Saíram sem navegar', (j) => (j.engagement.bounce ?? '–') + '%'],
+    ['Visitantes que voltaram', (j) => j.engagement.returning],
+  ];
+  const da = fillDays(a.daily), db = fillDays(b.daily);
+  const both = da.map((d, i) => ({ d: d.d, a: d.uv, b: db[i]?.uv || 0 }));
+  const max = Math.max(1, ...both.map((x) => Math.max(x.a, x.b)));
+  const W = 640, h = 160, pad = 26;
+  const X = (i) => pad + (both.length === 1 ? (W - pad) / 2 : (i * (W - pad - 8)) / (both.length - 1) + 4), Y = (v) => h - (v / max) * (h - 10);
+  let svg = `<svg viewBox="0 0 ${W} ${h + 22}" width="100%">`;
+  [0, max / 2, max].map(Math.round).forEach((v) => { svg += `<line x1="${pad}" x2="${W}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--grid)"/><text x="${pad - 4}" y="${Y(v) + 4}" text-anchor="end">${v}</text>`; });
+  [['a', 'var(--series-1)'], ['b', 'var(--series-2)']].forEach(([k, c]) => { svg += `<polyline fill="none" stroke="${c}" stroke-width="2" points="${both.map((d, i) => `${X(i)},${Y(d[k])}`).join(' ')}"/>`; });
+  const step = (W - pad) / both.length;
+  both.forEach((d, i) => {
+    svg += `<g class="hit" data-tip="${dayLab(d, true)} · Magnata ${fmt(d.a)} · Baratinho ${fmt(d.b)}"><rect x="${X(i) - step / 2}" y="0" width="${step}" height="${h}" fill="transparent"/><circle cx="${X(i)}" cy="${Y(d.a)}" r="4" fill="var(--series-1)" stroke="var(--surface-1)" stroke-width="2"/><circle cx="${X(i)}" cy="${Y(d.b)}" r="4" fill="var(--series-2)" stroke="var(--surface-1)" stroke-width="2"/></g>`;
+    if (both.length <= 14 || i % Math.ceil(both.length / 10) === 0) svg += `<text x="${X(i)}" y="${h + 15}" text-anchor="middle">${dayLab(d)}</text>`;
+  });
+  svg += '</svg>';
+  return `<div class="grid">
+  <div class="card wide"><h2>Magnata × Baratinho</h2><div class="sub">últimos ${days === 1 ? 'hoje' : days + ' dias'}</div>
+  <table><thead><tr><th>Métrica</th><th class="num">Magnata</th><th class="num">Baratinho</th></tr></thead><tbody>
+  ${rows.map(([l, f]) => `<tr><td>${l}</td><td class="num">${typeof f(a) === 'number' ? fmt(f(a)) : f(a) ?? '–'}</td><td class="num">${typeof f(b) === 'number' ? fmt(f(b)) : f(b) ?? '–'}</td></tr>`).join('')}
+  </tbody></table></div>
+  ${days > 1 ? `<div class="card wide"><h2>Visitantes por dia</h2><div class="legend"><span><i style="background:var(--series-1)"></i>Magnata</span><span><i style="background:var(--series-2)"></i>Baratinho</span></div>${svg}</div>` : ''}
+  </div>`;
+}
+
+async function render() {
+  app.innerHTML = '<div class="empty">Carregando…</div>';
+  try {
+    if (site === 'cmp') {
+      const [a, b] = await Promise.all([load('mag'), load('bar')]);
+      app.innerHTML = cmpView(a, b);
+    } else {
+      app.innerHTML = siteView(await load(site), SITES[site]);
+    }
+  } catch (e) {
+    if (e.login) loginView(e.message === 'sem senha' ? '' : e.message);
+    else app.innerHTML = `<div class="err">${esc(e.message)}</div>`;
+  }
+}
+
+document.getElementById('siteSeg').onclick = (e) => { const b = e.target.closest('button'); if (!b) return; site = b.dataset.s; document.querySelectorAll('#siteSeg button').forEach((x) => x.classList.toggle('on', x === b)); render(); };
+document.getElementById('daySeg').onclick = (e) => { const b = e.target.closest('button'); if (!b) return; days = Number(b.dataset.d); document.querySelectorAll('#daySeg button').forEach((x) => x.classList.toggle('on', x === b)); render(); };
+document.getElementById('sair').onclick = () => { localStorage.removeItem('an_mag'); localStorage.removeItem('an_bar'); loginView(''); };
+document.addEventListener('mousemove', (e) => {
+  const h = e.target.closest && e.target.closest('[data-tip]');
+  if (!h) { tt.style.display = 'none'; return; }
+  tt.textContent = h.getAttribute('data-tip'); tt.style.display = 'block';
+  tt.style.left = Math.min(innerWidth - tt.offsetWidth - 8, e.clientX + 12) + 'px'; tt.style.top = e.clientY + 14 + 'px';
+});
+render();
+</script>
+</body></html>
