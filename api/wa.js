@@ -25,6 +25,10 @@ export default async function handler(req, res) {
     if (action === 'status') return res.status(200).json({ state: await A.state(), provider: await provider() });
     if (action === 'qr') return res.status(200).json({ qr: await A.qr(), state: await A.state() });
     if (action === 'groups') return res.status(200).json({ groups: await A.groups(), current: (process.env.WA_GROUP_ID || '').trim() });
+    if (action === 'peek' && !isGo) {
+      const list = await evoAdmin.messages(String(req.query.jid || ''), Math.min(50, Number(req.query.n) || 10));
+      return res.status(200).json(Array.isArray(list) ? list.map((m) => ({ id: m.key?.id, ts: m.messageTimestamp, type: m.messageType, keys: Object.keys(m.message || {}), text: m.message?.conversation || m.message?.extendedTextMessage?.text || m.message?.imageMessage?.caption || null })) : list);
+    }
     if (action === 'join' && req.method === 'POST' && !isGo) {
       const code = String(req.query.code || '').replace(/^.*chat\.whatsapp\.com\//, '').replace(/[?#].*$/, '');
       return res.status(200).json(await evoAdmin.join(code));
