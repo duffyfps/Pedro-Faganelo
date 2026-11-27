@@ -184,17 +184,17 @@ ${GROUP() ? `<a class="btn wa" href="${esc(GROUP())}" rel="nofollow">Entrar no g
         host,
         head: `<meta name="theme-color" content="#ff1f7a"><meta property="og:image" content="https://${host}/baratinho-logo.webp"><style>
 .fem{--p:#ff1f7a;--p2:#a3124f;--p3:#ffe3ef;--p4:#fff4f8}
-.fem .fhero{position:relative;overflow:hidden;border-radius:26px;margin:18px 0 26px;padding:38px 26px 34px;text-align:center;color:#fff;background:radial-gradient(1200px 400px at 50% -10%,#ff6fae 0,transparent 60%),linear-gradient(160deg,#ff2d86 0%,#e3126a 55%,#a3124f 100%);box-shadow:0 18px 50px rgba(227,18,106,.35)}
-.fem .fhero:before,.fem .fhero:after{content:"";position:absolute;border-radius:50%;background:rgba(255,255,255,.08)}
+.fem .fhero{position:relative;overflow:hidden;border-radius:26px;margin:18px 0 26px;padding:34px 26px 34px;text-align:center;color:var(--p2);background:radial-gradient(900px 380px at 50% -20%,#fff 0,transparent 65%),linear-gradient(165deg,#fff6fa 0%,#ffe1ee 55%,#ffc9df 100%);border:1px solid #ffd0e3;box-shadow:0 18px 50px rgba(227,18,106,.18)}
+.fem .fhero:before,.fem .fhero:after{content:"";position:absolute;border-radius:50%;background:rgba(255,31,122,.07)}
 .fem .fhero:before{width:340px;height:340px;left:-120px;top:-120px}.fem .fhero:after{width:260px;height:260px;right:-90px;bottom:-110px}
-.fem .flogo{position:relative;display:inline-block;background:#fff;border-radius:22px;padding:16px 22px;box-shadow:0 10px 30px rgba(120,0,50,.25)}
-.fem .flogo img{display:block;width:min(340px,70vw);height:auto}
-.fem .fkick{position:relative;display:inline-block;margin:20px 0 8px;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35);padding:6px 14px;border-radius:99px;font-weight:700;font-size:13px;letter-spacing:.3px}
+.fem .flogo{position:relative;display:block;width:fit-content;margin:0 auto}
+.fem .flogo img{display:block;width:min(380px,78vw);height:auto;filter:drop-shadow(0 8px 18px rgba(163,18,79,.22))}
+.fem .fkick{position:relative;display:inline-block;margin:18px 0 8px;background:#fff;color:var(--p);border:1px solid #ffc2da;padding:6px 14px;border-radius:99px;font-weight:700;font-size:13px;letter-spacing:.3px}
 .fem h1{position:relative;font-family:'Playfair Display',serif;font-weight:900;font-size:clamp(28px,5vw,44px);line-height:1.08;margin:6px auto 12px;max-width:760px}
-.fem .fhero p{position:relative;max-width:620px;margin:0 auto 22px;font-size:17px;line-height:1.5;color:#ffe9f2}
-.fem .fbtn{position:relative;display:inline-flex;align-items:center;gap:10px;background:#fff;color:var(--p2);text-decoration:none;font-weight:900;font-size:18px;padding:16px 28px;border-radius:99px;box-shadow:0 10px 26px rgba(90,0,40,.3);transition:transform .15s}
-.fem .fbtn:hover{transform:translateY(-2px)}.fem .fbtn svg{color:#25d366}
-.fem .fnote{position:relative;margin-top:12px;font-size:13px;color:#ffd3e4}
+.fem .fhero p{position:relative;max-width:620px;margin:0 auto 22px;font-size:17px;line-height:1.5;color:#7d3b58}
+.fem .fbtn{position:relative;display:inline-flex;align-items:center;gap:10px;background:linear-gradient(135deg,#ff2d86,#e3126a);color:#fff;text-decoration:none;font-weight:900;font-size:18px;padding:16px 28px;border-radius:99px;box-shadow:0 10px 26px rgba(227,18,106,.35);transition:transform .15s}
+.fem .fbtn:hover{transform:translateY(-2px)}.fem .fbtn svg{color:#fff}
+.fem .fnote{position:relative;margin-top:12px;font-size:13px;color:#a8607f}
 .fem .fgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px;margin:0 0 30px}
 .fem .fcard{background:var(--p4);border:1px solid var(--p3);border-radius:18px;padding:18px}
 .fem .fcard b{display:block;font-size:26px;margin-bottom:6px}.fem .fcard h3{margin:0 0 4px;color:var(--p2);font-size:17px}.fem .fcard p{margin:0;color:#6b4a57;font-size:14px;line-height:1.45}
@@ -202,13 +202,13 @@ ${GROUP() ? `<a class="btn wa" href="${esc(GROUP())}" rel="nofollow">Entrar no g
 .fem .fsteps li{counter-increment:s;background:#fff;border:1px solid var(--p3);border-radius:16px;padding:16px 16px 16px 58px;position:relative;color:#4b3540;font-size:15px}
 .fem .fsteps li:before{content:counter(s);position:absolute;left:14px;top:14px;width:32px;height:32px;border-radius:50%;background:var(--p);color:#fff;font-weight:900;display:grid;place-items:center}
 .fem .sec h2{color:var(--p2)}.fem .sec a{color:var(--p)}
-.fem .fend{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:14px;background:linear-gradient(120deg,#ff2d86,#a3124f);color:#fff;border-radius:22px;padding:22px 24px;margin:30px 0 10px}
-.fem .fend img{height:44px;width:auto}.fem .fend strong{font-size:19px}.fem .fend .fbtn{font-size:16px;padding:13px 22px}
+.fem .fend{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:14px;background:linear-gradient(120deg,#fff6fa,#ffd6e7);border:1px solid #ffd0e3;color:var(--p2);border-radius:22px;padding:22px 24px;margin:30px 0 10px}
+.fem .fend img{height:56px;width:auto}.fem .fend strong{font-size:19px}.fem .fend .fbtn{font-size:16px;padding:13px 22px}
 </style>`,
         body: `<div class="fem">
 <div class="crumbs"><a href="/">Início</a> / Grupo feminino</div>
 <section class="fhero">
-  <div class="flogo"><img src="/baratinho-logo.webp" alt="Baratinho Diário" width="480" height="245"></div><br>
+  <div class="flogo"><img src="/baratinho-logo.webp" alt="Baratinho Diário" width="480" height="245"></div>
   <span class="fkick">💖 Grupo feminino · 100% grátis</span>
   <h1>Os achadinhos que toda mulher ama, todo dia no seu WhatsApp</h1>
   <p>No <strong>Baratinho Diário</strong> você recebe as melhores promoções de beleza, skincare, perfumes, moda e casa, com cupons e preços baixinhos, escolhidas a dedo.</p>
@@ -224,7 +224,7 @@ ${GROUP() ? `<a class="btn wa" href="${esc(GROUP())}" rel="nofollow">Entrar no g
 <div class="sec"><h2>Como entrar</h2></div>
 <ol class="fsteps"><li>Toque no botão <strong>Entrar no grupo</strong>.</li><li>O WhatsApp abre: toque em <strong>Entrar no grupo</strong> de novo.</li><li>Pronto! Agora é só aproveitar os achadinhos 💕</li></ol>
 ${fem.length ? `<div class="sec"><h2>Achadinhos femininos de hoje<small>Alguns que estão em promoção agora</small></h2><a href="/ofertas">Ver mais →</a></div>${grid(fem)}` : ''}
-<div class="fend"><img src="/baratinho-logo.webp" alt="Baratinho Diário" style="background:#fff;border-radius:12px;padding:6px 10px"><strong>Vem pro grupo das mulheres que compram bem 💖</strong><a class="fbtn" href="${FEM_GROUP}" rel="nofollow noopener" target="_blank">${wa} Entrar agora</a></div>
+<div class="fend"><img src="/baratinho-logo.webp" alt="Baratinho Diário"><strong>Vem pro grupo das mulheres que compram bem 💖</strong><a class="fbtn" href="${FEM_GROUP}" rel="nofollow noopener" target="_blank">${wa} Entrar agora</a></div>
 </div>`,
       });
     } else {
