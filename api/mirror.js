@@ -155,32 +155,25 @@ export default async function handler(req, res) {
             await trackLink('ml', !!ml.url, ml.why).catch(() => {});
           }
         }
-        // Mesma foto do post — MAS só se não tiver selo de outro canal (ex.: @xetdaspromocoes).
-        // Com selo (ou se não der para conferir), usa a foto oficial da loja; sem ela, vai só o texto.
-        if (j.post.image) {
+        // Foto: SEMPRE a foto oficial do anúncio (Mercado Livre ou Amazon). A foto do post pode ter logo/nome de
+        // outro canal (ex.: @xetdaspromocoes no canto) — só entra se a loja não tiver foto E a conferência disser que está limpa.
+        const meliLink = j.chain.find((u) => /^https:\/\/meli\.la\//.test(u)) || j.post.links?.find((u) => /^https:\/\/meli\.la\//.test(u));
+        let official = p.image || null;
+        if (!official && p.store === 'amazon') official = await amazonImage(j.asin);
+        if (!official && p.store === 'ml') official = j.mlImages?.[0] || (meliLink ? await mlLinkImage(meliLink) : null);
+        if (!official && j.post.altImage && (await hasWatermark(j.post.altImage)).wm === false) official = j.post.altImage;
+        if (official) {
+          p.image = official;
+          if (j.post.image) out.photos = [...(out.photos || []), `${j.post.id}: foto da loja (a do post é ignorada)`];
+        } else if (j.post.image) {
           const wm = await hasWatermark(j.post.image);
-          if (wm.wm === false) p.image = j.post.image;
-          else {
-            const official = p.store === 'amazon' ? p.image || (await amazonImage(j.asin)) : p.image;
-            // Sem foto da loja: usa a foto do post com a faixa do selo cortada (e confere de novo que o selo sumiu)
-            let cut = null;
-            if (!official && wm.wm && wm.hit) {
-              const c = cleanPhotoUrl(j.post.image, wm.hit);
-              if (c && (await hasWatermark(c)).wm === false) cut = c;
-            }
-            p.image = official || cut || null;
-            out.photos = [...(out.photos || []), `${j.post.id}: ${wm.why} → ${official ? 'foto da loja' : cut ? 'foto do post sem o selo' : 'sem foto'}`];
+          let cut = null;
+          if (wm.wm && wm.hit) {
+            const c = cleanPhotoUrl(j.post.image, wm.hit);
+            if (c && (await hasWatermark(c)).wm === false) cut = c;
           }
-        }
-        // Amazon sem foto (post só com texto, ou foto com selo sem foto oficial): foto oficial pelo ASIN / página do produto
-        if (!p.image && p.store === 'amazon') {
-          p.image = await amazonImage(j.asin);
-          out.photos = [...(out.photos || []), `${j.post.id}: Amazon sem foto → ${p.image ? 'foto da loja' : 'sem foto'}`];
-        }
-        // Post sem foto: usa uma foto do anúncio (fotos do produto, página da oferta ou o link meli.la do post)
-        if (!p.image && p.store === 'ml') {
-          const alt = j.mlImages?.[0] || j.post.altImage || (await mlLinkImage(j.chain.find((u) => /^https:\/\/meli\.la\//.test(u)) || j.post.links?.find((u) => /^https:\/\/meli\.la\//.test(u))));
-          if (alt) { p.image = alt; out.photos = [...(out.photos || []), `${j.post.id}: sem foto → foto do anúncio`]; }
+          p.image = wm.wm === false ? j.post.image : cut;
+          out.photos = [...(out.photos || []), `${j.post.id}: sem foto da loja; post ${wm.wm === false ? 'limpo' : wm.why} → ${p.image ? (cut ? 'foto do post sem o selo' : 'foto do post') : 'sem foto'}`];
         }
         // Foto com banner/texto (ex.: "O ÚNICO GIGANTE NO TAMANHO"): troca por uma do anúncio só com o produto no fundo branco
         if (p.image && p.store === 'ml') {

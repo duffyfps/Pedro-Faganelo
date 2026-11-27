@@ -18,6 +18,32 @@ export default async function handler(req, res) {
   if (!requirePassword(req, res)) return;
   // Diagnóstico: /api/fotos?check=https://meli.la/xxxx mostra se o robô vê o anúncio no ar
   if (req.query.check) { const debug = []; const st = await mlLinkStatus(String(req.query.check), debug); return res.status(200).json({ status: st, debug }); }
+  // /api/fotos?official=1: troca a foto das ofertas recentes pela foto oficial da loja (tira fotos de post com logo de outro canal)
+  if (req.query.official) {
+    const since = new Date(Date.now() - (Number(req.query.days) || 2) * 864e5).toISOString();
+    const list = await db.select('products', `updated_at=gte.${since}&select=id,store,image,url,open_url&order=updated_at.desc&limit=${Math.min(40, Number(req.query.limit) || 25)}&offset=${Number(req.query.offset) || 0}`);
+    const t1 = Date.now(), out = [];
+    for (const p of list) {
+      if (Date.now() - t1 > 50000) { out.push({ id: p.id, r: 'sem tempo' }); continue; }
+      const cur = String(p.image || '');
+      if (/mlstatic\.com|media-amazon\.com|\/fotos\/(crop_|.*_fix)/.test(cur)) { out.push({ id: p.id, r: 'já é da loja' }); continue; }
+      try {
+        let img = null;
+        if (p.store === 'amazon') img = await amazonImage(p.id.replace(/^amz:/, ''));
+        else {
+          const [o2] = await db.select('offers', `product_id=eq.${encodeURIComponent(p.id)}&select=message&order=created_at.desc&limit=1`);
+          const link = [p.url, p.open_url, ...(String(o2?.message || '').match(/https:\/\/meli\.la\/\S+/g) || [])].find((u) => /^https:\/\/(meli\.la\/|www\.mercadolivre\.com\.br\/social\/)/.test(String(u || '')));
+          img = await mlLinkImage(link);
+        }
+        if (!img) { out.push({ id: p.id, r: 'sem foto da loja' }); continue; }
+        const kept = await keepPhoto(img, `${p.id}_fix`);
+        if (needsCopy(kept)) { out.push({ id: p.id, r: 'falhou ao guardar' }); continue; }
+        await db.update('products', `id=eq.${encodeURIComponent(p.id)}`, { image: kept });
+        out.push({ id: p.id, r: 'trocada' });
+      } catch (e) { out.push({ id: p.id, r: `erro ${String(e.message).slice(0, 40)}` }); }
+    }
+    return res.status(200).json({ checked: list.length, out });
+  }
   // /api/fotos?crop=1: tira tarjas de texto da borda das fotos das ofertas recentes
   if (req.query.crop) {
     const { cropBands } = await import('../lib/cleanPhoto.js');
