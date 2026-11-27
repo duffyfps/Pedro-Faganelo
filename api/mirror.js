@@ -13,6 +13,7 @@ import { inQuietHours } from '../lib/sender.js';
 import { resolveCompetitorLink, createMlLink, sameProduct } from '../lib/mlLink.js';
 import { hasWatermark, amazonImage, cleanPhotoUrl } from '../lib/watermark.js';
 import { keepPhoto } from '../lib/photoStore.js';
+import { isCleanPhoto, pickCleanPhoto } from '../lib/cleanPhoto.js';
 import { checkSome } from '../lib/availability.js';
 import { fetchWaGroup, waGroups } from '../lib/waSource.js';
 
@@ -148,6 +149,7 @@ export default async function handler(req, res) {
             // Trava: o produto do link tem que ser o mesmo do post. Se não for, NÃO manda (fica no painel).
             const wrong = ml.url && j.info.title && ml.title && !sameProduct(j.info.title, ml.title);
             p.url = wrong ? null : ml.url || null;
+            if (!wrong && ml.images?.length) j.mlImages = ml.images;
             if (!wrong && ml.image && !p.image) p.image = ml.image; // foto oficial do anúncio (reserva) // sem link garantido: fica no painel para você colar o seu
             out.mlLinks = [...(out.mlLinks || []), wrong ? `produto diferente: "${ml.title.slice(0, 50)}"` : ml.url ? 'meli.la' : `sem link: ${ml.why}`];
             await trackLink('ml', !!ml.url, ml.why).catch(() => {});
@@ -168,6 +170,14 @@ export default async function handler(req, res) {
             }
             p.image = official || cut || null;
             out.photos = [...(out.photos || []), `${j.post.id}: ${wm.why} → ${official ? 'foto da loja' : cut ? 'foto do post sem o selo' : 'sem foto'}`];
+          }
+        }
+        // Foto com banner/texto (ex.: "O ÚNICO GIGANTE NO TAMANHO"): troca por uma do anúncio só com o produto no fundo branco
+        if (p.image && p.store === 'ml') {
+          const alts = [...(j.mlImages || []), j.post.altImage].filter((u) => u && u !== p.image);
+          if (alts.length && (await isCleanPhoto(p.image)) === false) {
+            const better = await pickCleanPhoto(alts);
+            if (better) { p.image = better; out.photos = [...(out.photos || []), `${j.post.id}: banner → foto limpa do anúncio`]; }
           }
         }
         if (p.store === 'amazon') {
