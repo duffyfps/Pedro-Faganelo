@@ -5,6 +5,7 @@ import { requirePassword } from '../lib/auth.js';
 import { db } from '../lib/db.js';
 import { keepPhoto, needsCopy } from '../lib/photoStore.js';
 import { hasWatermark, cleanPhotoUrl, amazonImage } from '../lib/watermark.js';
+import { mlListingStatus } from '../lib/mlLink.js';
 
 async function postPhoto(source) {
   const r = await fetch(`https://t.me/${source}?embed=1&mode=tme`, { signal: AbortSignal.timeout(7000) });
@@ -15,6 +16,8 @@ async function postPhoto(source) {
 
 export default async function handler(req, res) {
   if (!requirePassword(req, res)) return;
+  // Diagnóstico: /api/fotos?check=ml:MLB123 mostra se o robô vê o anúncio no ar
+  if (req.query.check) { const debug = []; const st = await mlListingStatus(String(req.query.check), debug); return res.status(200).json({ status: st, debug }); }
   const limit = Math.min(30, Number(req.query.limit) || 15);
   const t0 = Date.now();
   const rows = await db.select('products', `or=(image.like.*telesco.pe*,image.like.*api/img*,image.is.null)&select=id,store,image&order=updated_at.desc&limit=${limit}&offset=${Number(req.query.offset) || 0}`);
