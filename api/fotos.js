@@ -44,8 +44,9 @@ export default async function handler(req, res) {
       // 3) Mercado Livre: foto do anúncio pelo link meli.la (do produto ou da mensagem)
       if (!img && p.store === 'ml') {
         const [o2] = await db.select('offers', `product_id=eq.${encodeURIComponent(p.id)}&select=message&order=created_at.desc&limit=1`);
-        const link = [p.url, p.open_url, ...(String(o2?.message || '').match(/https:\/\/meli\.la\/\S+/g) || [])].find((u) => /^https:\/\/meli\.la\//.test(String(u || '')));
-        img = await mlLinkImage(link);
+        if (/^https:\/\/http2\.mlstatic\.com\/D_/.test(String(p.url || ''))) img = p.url; // às vezes o link guardado já é a foto do anúncio
+        const link = [p.url, p.open_url, ...(String(o2?.message || '').match(/https:\/\/meli\.la\/\S+/g) || [])].find((u) => /^https:\/\/(meli\.la\/|www\.mercadolivre\.com\.br\/social\/)/.test(String(u || '')));
+        if (!img) img = await mlLinkImage(link);
         why = img ? 'meli.la' : '';
       }
       if (!img) { out.push({ id: p.id, r: 'não achei foto limpa' }); continue; }
