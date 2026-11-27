@@ -12,8 +12,8 @@ import { trackShortLink, trackLink, watch, readState, writeState } from '../lib/
 import { inQuietHours } from '../lib/sender.js';
 import { resolveCompetitorLink, createMlLink, sameProduct, mlLinkImage } from '../lib/mlLink.js';
 import { hasWatermark, amazonImage, cleanPhotoUrl } from '../lib/watermark.js';
-import { keepPhoto } from '../lib/photoStore.js';
-import { isCleanPhoto, pickCleanPhoto } from '../lib/cleanPhoto.js';
+import { keepPhoto, keepBuffer } from '../lib/photoStore.js';
+import { isCleanPhoto, pickCleanPhoto, cropBands } from '../lib/cleanPhoto.js';
 import { checkSome } from '../lib/availability.js';
 import { fetchWaGroup, waGroups } from '../lib/waSource.js';
 
@@ -184,6 +184,16 @@ export default async function handler(req, res) {
             const better = await pickCleanPhoto(alts);
             if (better) { p.image = better; out.photos = [...(out.photos || []), `${j.post.id}: banner → foto limpa do anúncio`]; }
           }
+        }
+        // Foto com tarja de texto na borda (ex.: "Creme Firmador Pele Seca" na lateral): recorta só o produto
+        if (p.image) {
+          try {
+            const crop = await cropBands(p.image);
+            if (crop) {
+              const kept = await keepBuffer(crop, `crop_${String(p.id).replace(/[^\w-]+/g, '_').slice(-60)}`, 'image/jpeg');
+              if (kept) { p.image = kept; out.photos = [...(out.photos || []), `${j.post.id}: tarja na borda → recortada`]; }
+            }
+          } catch {}
         }
         if (p.store === 'amazon') {
           // Link curto (link.amazon) só quando ligado no banco: state amazon_short = 'on'

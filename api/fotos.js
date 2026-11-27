@@ -18,6 +18,24 @@ export default async function handler(req, res) {
   if (!requirePassword(req, res)) return;
   // Diagnóstico: /api/fotos?check=https://meli.la/xxxx mostra se o robô vê o anúncio no ar
   if (req.query.check) { const debug = []; const st = await mlLinkStatus(String(req.query.check), debug); return res.status(200).json({ status: st, debug }); }
+  // /api/fotos?crop=1: tira tarjas de texto da borda das fotos das ofertas recentes
+  if (req.query.crop) {
+    const { cropBands } = await import('../lib/cleanPhoto.js');
+    const { keepBuffer } = await import('../lib/photoStore.js');
+    const since = new Date(Date.now() - (Number(req.query.days) || 2) * 864e5).toISOString();
+    const list = await db.select('products', `updated_at=gte.${since}&image=not.is.null&image=not.like.*crop_*&select=id,image&order=updated_at.desc&limit=${Math.min(40, Number(req.query.limit) || 25)}&offset=${Number(req.query.offset) || 0}`);
+    const t1 = Date.now(), done = [];
+    for (const p of list) {
+      if (Date.now() - t1 > 50000) break;
+      try {
+        const c = await cropBands(p.image);
+        if (!c) continue;
+        const kept = await keepBuffer(c, `crop_${String(p.id).replace(/[^\w-]+/g, '_').slice(-60)}`, 'image/jpeg');
+        if (kept) { await db.update('products', `id=eq.${encodeURIComponent(p.id)}`, { image: kept }); done.push(p.id); }
+      } catch {}
+    }
+    return res.status(200).json({ checked: list.length, cropped: done });
+  }
   const limit = Math.min(30, Number(req.query.limit) || 15);
   const t0 = Date.now();
   const rows = await db.select('products', `or=(image.like.*telesco.pe*,image.like.*api/img*,image.is.null)&select=*&order=updated_at.desc&limit=${limit}&offset=${Number(req.query.offset) || 0}`);
