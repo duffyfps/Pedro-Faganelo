@@ -41,6 +41,14 @@
       "destination": "/api/site?r=feminino"
     },
     {
+      "source": "/ev",
+      "destination": "/api/site?r=ev"
+    },
+    {
+      "source": "/analytics",
+      "destination": "/analytics.html"
+    },
+    {
       "source": "/painel",
       "destination": "/painel.html"
     },
