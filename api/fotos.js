@@ -18,6 +18,21 @@ export default async function handler(req, res) {
   if (!requirePassword(req, res)) return;
   // Diagnóstico: /api/fotos?check=https://meli.la/xxxx mostra se o robô vê o anúncio no ar
   if (req.query.check) { const debug = []; const st = await mlLinkStatus(String(req.query.check), debug); return res.status(200).json({ status: st, debug }); }
+  // /api/fotos?shopee=<link>: testa a conta de afiliado da Shopee (dados do produto + link curto)
+  if (req.query.shopee) {
+    const { shopeeIds, shopeeProduct, shopeeShortLink, shopeeEnabled } = await import('../lib/shopee.js');
+    const { followRedirects } = await import('../lib/telegram.js');
+    if (!shopeeEnabled()) return res.status(200).json({ ok: false, why: 'faltam SHOPEE_APP_ID/SHOPEE_APP_SECRET' });
+    try {
+      const chain = await followRedirects(String(req.query.shopee));
+      const ids = chain.map(shopeeIds).find((x) => x.itemId) || {};
+      const prod = ids.itemId ? await shopeeProduct(ids) : null;
+      const link = await shopeeShortLink(prod?.productLink || chain.at(-1), 'teste');
+      return res.status(200).json({ ok: !!link, ids, prod, link, final: String(chain.at(-1)).slice(0, 120) });
+    } catch (e) {
+      return res.status(200).json({ ok: false, why: String(e.message).slice(0, 300) });
+    }
+  }
   // /api/fotos?official=1: troca a foto das ofertas recentes pela foto oficial da loja (tira fotos de post com logo de outro canal)
   if (req.query.official) {
     const since = new Date(Date.now() - (Number(req.query.days) || 2) * 864e5).toISOString();
