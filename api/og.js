@@ -16,18 +16,34 @@ export default async function handler(req, res) {
     // Prévia sempre QUADRADA com o produto inteiro e centralizado no fundo branco (o WhatsApp corta fotos
     // compridas: produto alto ou largo perdia o topo/os lados). Tira a borda branca e deixa uma margem igual em volta.
     const flat = await sharp(Buffer.from(photo)).flatten({ background: '#ffffff' }).toBuffer();
+    // Foto sem fundo branco (foto de pessoa, fundo cinza/colorido): preenche o quadrado inteiro, sem margem branca
+    const sm = await sharp(flat).resize(64, 64, { fit: 'fill' }).removeAlpha().raw().toBuffer();
+    let edge = 0, white = 0;
+    for (let y = 0; y < 64; y++)
+      for (let x = 0; x < 64; x++) {
+        if (x > 2 && x < 61 && y > 2 && y < 61) continue;
+        const i = (y * 64 + x) * 3;
+        edge++;
+        if (sm[i] > 232 && sm[i + 1] > 232 && sm[i + 2] > 232) white++;
+      }
+    const fill = white / edge < 0.8;
     let core = flat;
     try {
       const t = await sharp(flat).trim({ background: '#ffffff', threshold: 18 }).toBuffer();
       const tm = await sharp(t).metadata();
       if (tm.width > 40 && tm.height > 40) core = t;
     } catch {}
-    const M = Math.round(S * 0.07), inner = S - 2 * M;
-    const fit = await sharp(core).resize(inner, inner, { fit: 'inside' }).toBuffer();
-    const fm = await sharp(fit).metadata();
-    const pic = await sharp({ create: { width: S, height: S, channels: 3, background: '#ffffff' } })
-      .composite([{ input: fit, left: Math.round((S - fm.width) / 2), top: Math.round((S - fm.height) / 2) }])
-      .png().toBuffer();
+    let pic;
+    if (fill) {
+      pic = await sharp(flat).resize(S, S, { fit: 'cover', position: sharp.strategy.attention }).png().toBuffer();
+    } else {
+      const M = Math.round(S * 0.07), inner = S - 2 * M;
+      const fit = await sharp(core).resize(inner, inner, { fit: 'inside' }).toBuffer();
+      const fm = await sharp(fit).metadata();
+      pic = await sharp({ create: { width: S, height: S, channels: 3, background: '#ffffff' } })
+        .composite([{ input: fit, left: Math.round((S - fm.width) / 2), top: Math.round((S - fm.height) / 2) }])
+        .png().toBuffer();
+    }
     const pm = await sharp(pic).metadata();
     const layers = [];
     if (logo) {
