@@ -16,6 +16,7 @@ import { keepPhoto, keepBuffer } from '../lib/photoStore.js';
 import { isCleanPhoto, pickCleanPhoto, cropBands } from '../lib/cleanPhoto.js';
 import { checkSome } from '../lib/availability.js';
 import { fetchWaGroup, waGroups } from '../lib/waSource.js';
+import { shopeeIds, shopeeProduct, shopeeShortLink } from '../lib/shopee.js';
 
 const TIME_BUDGET_MS = 45_000;
 
@@ -115,6 +116,29 @@ export default async function handler(req, res) {
               url: amazonLink(j.asin),
             };
           }
+        } else if (j.store === 'shopee') {
+          // Shopee: dados do produto pela API de afiliados + link curto da SUA conta (s.shopee.com.br)
+          const ids = j.chain.map(shopeeIds).find((x) => x.itemId) || {};
+          if (!ids.itemId) { out.skipped.push(`${j.post.id}: Shopee sem produto`); continue; }
+          let d = null, url = null;
+          try {
+            d = await shopeeProduct(ids);
+            url = await shopeeShortLink(d?.productLink || `https://shopee.com.br/product/${ids.shopId}/${ids.itemId}`, 'grupo');
+          } catch (e) {
+            out.errors.push(`Shopee: ${String(e.message).slice(0, 150)}`);
+          }
+          await trackLink('shopee', !!url, url ? 'ok' : 'sem link').catch(() => {});
+          const price = j.info.price || d?.price; // o preço do post costuma já ter cupom/Pix
+          if (!url || !price || !(d?.title || j.info.title)) { out.skipped.push(`${j.post.id}: Shopee sem ${!url ? 'link de afiliado' : 'dados'}`); continue; }
+          p = {
+            id: `shp:${ids.shopId || 0}_${ids.itemId}`,
+            store: 'shopee',
+            title: d?.title || j.info.title,
+            image: d?.image || null,
+            price,
+            listPrice: j.info.listPrice || d?.listPrice || null,
+            url,
+          };
         } else {
           let ids = j.chain.map(idsFromUrl).find((x) => x.item || x.product) || {};
           let productUrl = null;

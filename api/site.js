@@ -113,7 +113,7 @@ ${catsGrid(hot.slice(0, 12).length ? hot.slice(0, 12) : CATEGORIES.slice(0, 12))
 ${trustRow()}`,
       });
     } else if (r === 'ofertas') {
-      const loja = req.query.loja === 'amazon' ? 'amazon' : req.query.loja === 'ml' ? 'ml' : '';
+      const loja = ['amazon', 'ml', 'shopee'].includes(req.query.loja) ? req.query.loja : '';
       const q = String(req.query.q || '').trim().slice(0, 60);
       const ate = Number(req.query.ate) || 0;
       const ordem = req.query.ordem === 'desconto' ? 'desconto' : '';
@@ -129,7 +129,7 @@ ${trustRow()}`,
       const base = `/ofertas${params.toString() ? `?${params}` : ''}`;
       const link = (k, v) => { const p2 = new URLSearchParams(params); if (v) p2.set(k, v); else p2.delete(k); const s2 = p2.toString(); return `/ofertas${s2 ? `?${s2}` : ''}`; };
       const active = q ? '' : ordem ? 'descontos' : ate ? 'ate50' : loja === 'amazon' ? 'amazon' : loja === 'ml' ? 'ml' : 'ofertas';
-      const titulo = q ? `Resultados para “${esc(q)}”` : ordem ? 'Maiores descontos' : ate ? `Ofertas até R$ ${ate}` : loja === 'amazon' ? 'Ofertas da Amazon' : loja === 'ml' ? 'Ofertas do Mercado Livre' : 'Ofertas de hoje';
+      const titulo = q ? `Resultados para “${esc(q)}”` : ordem ? 'Maiores descontos' : ate ? `Ofertas até R$ ${ate}` : loja === 'amazon' ? 'Ofertas da Amazon' : loja === 'ml' ? 'Ofertas do Mercado Livre' : loja === 'shopee' ? 'Ofertas da Shopee' : 'Ofertas de hoje';
       html = layout({
         title: `${q ? q : titulo.replace(/<[^>]+>/g, '')} — ${SITE()}`,
         desc: 'As promoções do dia da Amazon e do Mercado Livre.',
